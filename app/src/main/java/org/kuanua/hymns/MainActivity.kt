@@ -39,7 +39,7 @@ class MainActivity:ComponentActivity(){
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
- var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))}
+ var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentationIndex by remember{mutableIntStateOf(0)}
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
@@ -47,7 +47,7 @@ class MainActivity:ComponentActivity(){
  MaterialTheme{Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
   Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)
-  if(opened!=null){
+  if(presenting){\n   val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}\n   TextButton(onClick={presenting=false}){Text("← Exit presentation")}\n   if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{\n    val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]\n    Text("WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium)\n    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.Center){\n     Text(current.number.toString()+". "+current.title,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)\n     if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))\n     current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}\n    }\n    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){\n     OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}\n     Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}\n    }\n   }\n  }else if(opened!=null){
    val h=opened!!
    TextButton(onClick={opened=null}){Text("← Back")}
    Text(h.number.toString()+". "+h.title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
