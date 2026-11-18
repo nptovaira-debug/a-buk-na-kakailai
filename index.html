@@ -32,8 +32,6 @@
 .section-tab{flex:0 0 auto;border:1px solid #d8cfbf;background:#f8f5ee;color:var(--navy);border-radius:999px;padding:9px 13px;font:700 11px Arial,sans-serif;white-space:nowrap;cursor:pointer}
 .section-tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
 .section-tab{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.section-tab:after{content:'＋';font:700 13px Arial,sans-serif;color:#a27d3c}
-.section-tab[aria-expanded='true']:after{content:'−'}
 .hymn[hidden],.section[hidden]{display:none!important}
 
 
@@ -264,20 +262,7 @@ body.dark-reader .queue-row .queue-title,body.dark-reader .collection-row strong
 
 .source-panel{max-width:1180px;margin:12px auto 0;padding:0 14px;font-family:Arial,sans-serif}.source-panel details{background:var(--card,#fff);border:1px solid var(--line,#e5dfd3);border-radius:12px;overflow:hidden}.source-panel summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;color:var(--navy,#172b46);font-weight:700;font-size:14px}.source-panel summary::-webkit-details-marker{display:none}.source-panel summary:after{content:"＋";font-size:17px;color:var(--gold,#9b783a)}.source-panel details[open] summary:after{content:"−"}.source-hint{font-size:11px;font-weight:400;color:var(--muted,#777);text-align:right}.source-content{padding:0 16px 16px;border-top:1px solid var(--line,#e5dfd3);font-size:13px;line-height:1.55;color:var(--text,#333)}.source-content h2{font-size:15px;line-height:1.45;color:var(--navy,#172b46);margin:14px 0 8px}.source-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin:12px 0}.source-details div{min-width:0}.source-details dt{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#777);font-weight:700}.source-details dd{margin:2px 0 0;font-weight:600}.source-note{padding:10px 12px;background:var(--soft,#f5f1e8);border-radius:8px}.source-credit{font-size:11px;color:var(--muted,#777)}.source-link{display:inline-block;margin-top:4px;color:var(--navy,#172b46);font-weight:700;text-decoration:underline;text-underline-offset:3px}@media(max-width:600px){.source-panel{padding:0 10px;margin-top:10px}.source-panel summary{padding:12px;font-size:13px}.source-hint{max-width:120px}.source-details{grid-template-columns:1fr 1fr;gap:9px 12px}.source-content{padding:0 12px 14px}}
 
-/* Section dropdown hymn lists */
-.section-hymn-list{display:none;padding:5px 4px 8px 12px;margin:0 0 5px 8px;border-left:2px solid #e5dccb;max-height:320px;overflow:auto}
-.section-hymn-list.open{display:block}
-.section-hymn-list a{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:start;padding:7px 8px;border-radius:7px;color:#40536a;text-decoration:none;font:11px/1.4 Inter,Arial,sans-serif}
-.section-hymn-list a:hover,.section-hymn-list a:focus{background:#f2f5f9;color:#172b46;outline:none}
-.section-hymn-list .browse-number{font-weight:700;color:#a27d3c;text-align:right;font-variant-numeric:tabular-nums}
-.section-tab{position:relative;text-align:left;padding-right:30px!important}
-.section-tab:after{content:'⌄';position:absolute;right:12px;color:#a27d3c;font-size:15px}
-.section-tab[aria-expanded="true"]:after{content:'⌃'}
-@media(max-width:760px){.contents-panel .section-tabs{display:flex!important;flex-direction:column!important;max-height:55vh!important;grid-template-columns:none!important}.section-hymn-list{margin-left:10px}.section-hymn-list a{font-size:12px;padding:8px}}
-.browse-sort-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
-.browse-sort-row label{margin:0;font:700 12px Inter,Arial,sans-serif;color:var(--navy,#172b46)}
-#hymnSort{min-width:190px;max-width:100%;border:1px solid #cfc6b5;border-radius:8px;padding:9px 32px 9px 11px;background:#fff;color:var(--ink,#252a30);font:13px Arial,sans-serif}
-body.dark-reader #hymnSort{background:#132033;color:var(--ink);border-color:var(--line)}
+
 
 </style><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#172b46"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
 #readingProgress{position:fixed;top:0;left:0;width:0;height:3px;background:#b18a45;z-index:1000;transition:width .08s linear}
@@ -330,14 +315,6 @@ body.dark-reader #hymnSort{background:#132033;color:var(--ink);border-color:var(
  <label for="hymnSearch">Filter hymns</label>
  <input id="hymnSearch" type="search" placeholder="Filter by hymn number, title or lyrics…" autocomplete="off">
  <div class="search-meta" id="searchMeta">Showing all 250 hymns</div>
- <div class="browse-sort-row">
-  <label for="hymnSort">View order</label>
-  <select id="hymnSort" aria-label="Choose hymn list order">
-   <option value="number">Hymn number (1–250)</option>
-   <option value="mhb">M.H.B. number (low–high)</option>
-   <option value="title">Title (A–Z)</option>
-  </select>
- </div>
  <div class="reader-tools" role="toolbar" aria-label="Hymn book tools">
   <button type="button" id="showFavourites" class="tool-btn">♡ Favourites <span id="favCount">0</span></button>
   <button type="button" id="showHistory" class="tool-btn">◷ Recently read</button>
@@ -7016,76 +6993,8 @@ Tamaivevet arama ra bala na bakut, boina ba da ru ra iangim. Boina ba na vut kau
    return {card,section:card.dataset.section,haystack:normalize(raw)};
  });
 
- // Build an expandable hymn list beneath each original section.
- const sectionNames=new Map(tabs.map(tab=>[tab.dataset.section,tab.textContent.trim()]));
- const sortControl=document.getElementById('hymnSort');
- let hymnSort='number';
- const sortHymnLinks=()=>{
-  document.querySelectorAll('.section-hymn-list').forEach(list=>{
-   const links=[...list.querySelectorAll('a[data-browse-hymn]')];
-   links.sort((a,b)=>{
-    const an=Number(a.querySelector('.browse-number')?.textContent||0);
-    const bn=Number(b.querySelector('.browse-number')?.textContent||0);
-    const getMhbNumber=link=>{
-     const cardId=link.getAttribute('data-browse-hymn');
-     const card=document.getElementById(cardId);
-     const ref=card?.querySelector('.ref')?.innerText||'';
-     const match=ref.match(/M\.\s*H\.\s*B\.\s*(\d+)/i);
-     return match?Number(match[1]):null;
-    };
-    if(hymnSort==='mhb'){
-     const am=getMhbNumber(a), bm=getMhbNumber(b);
-     if(am===null&&bm!==null)return 1;
-     if(am!==null&&bm===null)return -1;
-     return (am??Infinity)-(bm??Infinity)||an-bn;
-    }
-    if(hymnSort==='title'){
-     const at=a.querySelector('span:last-child')?.textContent||'';
-     const bt=b.querySelector('span:last-child')?.textContent||'';
-     return at.localeCompare(bt,undefined,{sensitivity:'base',numeric:true})||an-bn;
-    }
-    return an-bn;
-   });
-   links.forEach(link=>list.appendChild(link));
-  });
- };
- sortControl.addEventListener('change',()=>{
-  hymnSort=sortControl.value;
-  sortHymnLinks();
- });
- tabs.forEach(tab=>{
-  const section=tab.dataset.section;
-  const list=document.createElement('div');
-  list.className='section-hymn-list';
-  list.id='hymn-list-'+section;
-  list.setAttribute('aria-label',(sectionNames.get(section)||'Hymns')+' hymn list');
-  const members=section==='all'?cards:indexed.filter(item=>item.section===section).map(item=>item.card);
-  list.innerHTML=members.map(card=>{
-   const number=(card.id.match(/\d+/)||[])[0]||'';
-   const title=(card.querySelector('h2')?.innerText||'').replace(/^\s*\d+\.\s*/, '');
-   return `<a href="#${card.id}" data-browse-hymn="${card.id}"><span class="browse-number">${number}</span><span>${escapeHtml(title)}</span></a>`;
-  }).join('');
-  tab.insertAdjacentElement('afterend',list);
-  tab.setAttribute('aria-controls',list.id);
-  tab.setAttribute('aria-expanded','false');
-  tab.addEventListener('click',()=>{
-   const wasOpen=list.classList.contains('open');
-   document.querySelectorAll('.section-hymn-list').forEach(other=>{other.classList.remove('open');const owner=other.previousElementSibling;if(owner?.classList.contains('section-tab'))owner.setAttribute('aria-expanded','false')});
-   if(!wasOpen){list.classList.add('open');tab.setAttribute('aria-expanded','true')}
-  });
-  list.addEventListener('click',event=>{
-   const link=event.target.closest('a[data-browse-hymn]');
-   if(!link)return;
-   event.preventDefault();
-   const card=document.getElementById(link.dataset.browseHymn);
-   if(!card)return;
-   selectedHymn=card.id; activeSection='single'; input.value=''; delete input.dataset.searching;
-   applyFilters();
-   document.querySelectorAll('.section-hymn-list').forEach(other=>{other.classList.remove('open');const owner=other.previousElementSibling;if(owner?.classList.contains('section-tab'))owner.setAttribute('aria-expanded','false')});
-   card.scrollIntoView({behavior:'smooth',block:'start'});
-  });
- });
- sortHymnLinks();
+ // Section buttons now filter the collection directly; nested dropdowns are removed.
+
 
  function applyFilters(){
   const rawQuery=input.value;
