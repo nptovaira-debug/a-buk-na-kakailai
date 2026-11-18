@@ -22,7 +22,8 @@ assert [h["number"] for h in hymns if not h["stanzas"]] == [237, 238, 239]
 assert '<div id="hymnDataContainer"' in web
 assert "fetch('./shared-data/hymns.json')" in web
 assert "fetch('./shared-data/sections.json')" in web
-assert '<article class="hymn"' not in web
+assert 'id="hymn-1" data-section=' not in web
+assert "chunks.push(" in web
 assert "./shared-data/hymns.json" in sw and "./shared-data/sections.json" in sw
 print(f"PASS: {len(hymns)} hymns, {len(sections)} sections; Android data matches.")
 print("PASS: Web app loads shared JSON; static duplicate hymn markup removed.")
