@@ -43,11 +43,28 @@ class MainActivity:ComponentActivity(){
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
- fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}\n fun moveService(n:String,delta:Int){val from=playlist.indexOf(n);val to=from+delta;if(from<0||to !in playlist.indices)return;val next=playlist.toMutableList();val item=next.removeAt(from);next.add(to,item);playlist=next;prefs.edit().putString("service_playlist",next.joinToString(",")).apply()}
+ fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}
+ fun moveService(n:String,delta:Int){val from=playlist.indexOf(n);val to=from+delta;if(from<0||to !in playlist.indices)return;val next=playlist.toMutableList();val item=next.removeAt(from);next.add(to,item);playlist=next;prefs.edit().putString("service_playlist",next.joinToString(",")).apply()}
  MaterialTheme{Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
   Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)
-  if(presenting){\n   val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}\n   TextButton(onClick={presenting=false}){Text("← Exit presentation")}\n   if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{\n    val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]\n    Text("WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium)\n    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.Center){\n     Text(current.number.toString()+". "+current.title,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)\n     if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))\n     current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}\n    }\n    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){\n     OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}\n     Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}\n    }\n   }\n  }else if(opened!=null){
+  if(presenting){
+   val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
+   TextButton(onClick={presenting=false}){Text("← Exit presentation")}
+   if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{
+    val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
+    Text("WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium)
+    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.Center){
+     Text(current.number.toString()+". "+current.title,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)
+     if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))
+     current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}
+    }
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+     OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}
+     Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}
+    }
+   }
+  }else if(opened!=null){
    val h=opened!!
    TextButton(onClick={opened=null}){Text("← Back")}
    Text(h.number.toString()+". "+h.title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
@@ -77,6 +94,7 @@ class MainActivity:ComponentActivity(){
    val shown=if(tab=="Service")base else base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
    if(tab=="Service"){
     Text("Service order · ${playlist.size} hymns",style=MaterialTheme.typography.labelMedium)
+    Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Start worship presentation")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+h.title.ifBlank{"Hymn "+h.number},fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
