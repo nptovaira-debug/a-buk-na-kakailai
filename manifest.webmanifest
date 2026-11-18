@@ -1,0 +1,11 @@
+{
+  "name": "A Buk na Kakailai",
+  "short_name": "A Buk na Kakailai",
+  "description": "Kuanua hymns and catechism reader based on the 1960 Blanche Bay Dialect publication.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f5ef",
+  "theme_color": "#172b46",
+  "lang": "en"
+}
