@@ -23,6 +23,8 @@ private data class Verse(val number:String,val text:String)
 private data class Hymn(val number:Int,val sectionId:String,val title:String,val source:String,val verses:List<Verse>)
 private data class Section(val id:String,val title:String)
 
+private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.number}\\.\\s*"), "").ifBlank { "Hymn ${h.number}" }
+
 class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){
   super.onCreate(savedInstanceState)
@@ -55,7 +57,7 @@ class MainActivity:ComponentActivity(){
     val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
     Text("WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium)
     Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.Center){
-     Text(current.number.toString()+". "+current.title,style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)
+     Text(current.number.toString()+". "+displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)
      if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))
      current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}
     }
@@ -67,7 +69,7 @@ class MainActivity:ComponentActivity(){
   }else if(opened!=null){
    val h=opened!!
    TextButton(onClick={opened=null}){Text("← Back")}
-   Text(h.number.toString()+". "+h.title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+   Text(h.number.toString()+". "+displayHymnTitle(h),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.labelSmall)
    Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
     OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Favourite saved" else "☆ Favourite")}
@@ -97,7 +99,7 @@ class MainActivity:ComponentActivity(){
     Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Start worship presentation")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+h.title.ifBlank{"Hymn "+h.number},fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
   }
