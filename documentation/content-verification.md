@@ -23,4 +23,4 @@ The working transcription is based on the 1960 *A Buk na Tinir, ma A Buk na Kaka
 
 ## Validation performed during dataset extraction
 
-The dataset was generated from the existing `index.html` hymn articles. A structural check found 250 numbered records (1–250), 27 section headings and 914 stanza blocks. Records 237–239 have no title or stanza content in the source HTML and remain empty placeholders. These counts are structural checks only; they do not prove textual accuracy against the printed book.
+The dataset was generated from the existing `index.html` hymn articles. A structural check found 250 numbered records (1–250), 27 section headings and 914 stanza blocks. Hymns 237–239 retain their displayed titles but have no stanza content in the source HTML; they remain empty records. These counts are structural checks only; they do not prove textual accuracy against the printed book.
