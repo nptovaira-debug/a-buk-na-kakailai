@@ -1,5 +1,5 @@
-const CACHE_NAME = "a-buk-na-kakailai-v1";
-const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest"];
+const CACHE_NAME = "a-buk-na-kakailai-v2";
+const APP_SHELL = ["./", "./index.html", "./manifest.webmanifest", "./shared-data/hymns.json", "./shared-data/sections.json"];
 
 self.addEventListener("install", event => {
   event.waitUntil(
