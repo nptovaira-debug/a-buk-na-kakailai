@@ -18,5 +18,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Validate shared hymn data
+        run: python3 scripts/validate_hymns.py
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
