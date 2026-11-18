@@ -21,8 +21,9 @@ section_ids = {section["id"] for section in sections["sections"]}
 assert all(h["sectionId"] in section_ids for h in hymns), "A hymn references an unknown section"
 assert android_copy == shared_text, "Android asset is out of sync with shared hymn data"
 
-def clean(fragment):
-    return html.unescape(re.sub(r"<[^>]*>", "", fragment)).strip()
+def clean(fragment, strip=True):
+    value = html.unescape(re.sub(r"<[^>]*>", "", fragment))
+    return value.strip() if strip else value
 
 web_records = []
 for match in re.finditer(r'<article class="hymn" id="hymn-(\d+)" data-section="([^"]+)">([\s\S]*?)</article>', web_html):
@@ -34,7 +35,7 @@ for match in re.finditer(r'<article class="hymn" id="hymn-(\d+)" data-section="(
     for stanza in re.finditer(stanza_pattern, body):
         stanza_number, stanza_text = stanza.groups()
         stanza_text = re.sub(r"<br\s*/?>", "\n", stanza_text)
-        stanzas.append({"number": clean(stanza_number), "text": clean(stanza_text)})
+        stanzas.append({"number": clean(stanza_number), "text": clean(stanza_text, strip=False)})
     web_records.append({
         "number": int(number),
         "sectionId": section_id,
