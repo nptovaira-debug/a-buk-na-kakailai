@@ -1,0 +1,20 @@
+{
+  "publication": {
+    "title": "A Buk na Tinir, ma A Buk na Kakailai ure ra Lotu, ma A Lotu na Pupunang",
+    "year": 1960,
+    "publisher": "Methodist Mission Press",
+    "place": "Rabaul, New Britain, T.N.G.",
+    "extent": "210 pages",
+    "language": "Kuanua (Blanche Bay Dialect)"
+  },
+  "transcription": {
+    "status": "OCR-assisted working transcription; not yet fully verified against the original scan.",
+    "method": "OCR-assisted transcription from the scan supplied for this project",
+    "policy": "Preserve the transcribed wording, spelling, punctuation and stanza structure. Do not silently normalize, correct, or reconstruct the historical text.",
+    "knownSourceGaps": [
+      "The supplied scan has missing printed pages 188–189.",
+      "Hymns 237–239 are not reproduced in the supplied source and remain explicit empty placeholders in the current web edition."
+    ],
+    "verification": "Individual hymn sourceReference values are the printed reference strings visible in the current transcription. They are not page numbers and have not been independently checked against the scan."
+  }
+}
