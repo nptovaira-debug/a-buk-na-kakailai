@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -61,7 +62,7 @@ private fun HymnBookApp(hymns: List<Hymn>, sections: List<HymnSection>) {
                 } else {
                     OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), label = { Text("Search number, title or lyrics") }, singleLine = true)
                     Spacer(Modifier.height(6.dp))
-                    Row {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                         TextButton(onClick = { selectedSection = null }) { Text("All sections") }
                         sections.forEach { section ->
                             TextButton(onClick = { selectedSection = if (selectedSection == section.id) null else section.id }) {
