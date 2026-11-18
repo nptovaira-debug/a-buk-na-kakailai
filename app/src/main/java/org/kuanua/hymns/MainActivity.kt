@@ -38,9 +38,12 @@ class MainActivity:ComponentActivity(){
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
+ var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
  var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))}
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
+ fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
+ fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}
  MaterialTheme{Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
   Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)
@@ -49,8 +52,9 @@ class MainActivity:ComponentActivity(){
    TextButton(onClick={opened=null}){Text("← Back")}
    Text(h.number.toString()+". "+h.title,style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.labelSmall)
-   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-    OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Favourite saved" else "☆ Add favourite")}
+   Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
+    OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Favourite saved" else "☆ Favourite")}
+    OutlinedButton(onClick={addToService(h.number)}){Text(if(playlist.contains(h.number.toString()))"✓ In service" else "+ Service")}
     TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")}
     TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}
    }
@@ -66,13 +70,18 @@ class MainActivity:ComponentActivity(){
     if(saved)Text("Note saved on this device.",style=MaterialTheme.typography.bodySmall)
    }
   }else{
-   Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
-   OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text("Search number, title or lyrics")},singleLine=true)
+   Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
+   if(tab!="Service")OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text("Search number, title or lyrics")},singleLine=true)
    if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState())){TextButton(onClick={section=null}){Text("All sections")};sections.forEach{s->TextButton(onClick={section=if(section==s.id)null else s.id}){Text(s.title)}}}
-   val base=when(tab){"Favourites"->hymns.filter{favs.contains(it.number.toString())};"Recent"->recent.mapNotNull{id->hymns.find{it.number.toString()==id}};else->hymns}
-   val shown=base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
-   Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+h.title.ifBlank{"Hymn "+h.number},fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(favs.contains(h.number.toString()))Text("★")}}}}
+   val base=when(tab){"Favourites"->hymns.filter{favs.contains(it.number.toString())};"Recent"->recent.mapNotNull{id->hymns.find{it.number.toString()==id}};"Service"->playlist.mapNotNull{id->hymns.find{it.number.toString()==id}};else->hymns}
+   val shown=if(tab=="Service")base else base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
+   if(tab=="Service"){
+    Text("Service order · ${playlist.size} hymns",style=MaterialTheme.typography.labelMedium)
+    Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
+   }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
+   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+h.title.ifBlank{"Hymn "+h.number},fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}else if(favs.contains(h.number.toString()))Text("★")}}}}
+   if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
+   if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
   }
  }}}
 }
