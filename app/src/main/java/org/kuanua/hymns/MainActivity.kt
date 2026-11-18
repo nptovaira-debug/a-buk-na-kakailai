@@ -41,15 +41,17 @@ class MainActivity:ComponentActivity(){
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
- var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentationIndex by remember{mutableIntStateOf(0)}
+ var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))}
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
  fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}
  fun moveService(n:String,delta:Int){val from=playlist.indexOf(n);val to=from+delta;if(from<0||to !in playlist.indices)return;val next=playlist.toMutableList();val item=next.removeAt(from);next.add(to,item);playlist=next;prefs.edit().putString("service_playlist",next.joinToString(",")).apply()}
- MaterialTheme{Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
-  Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold)
-  Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)
+ MaterialTheme(colorScheme=if(darkMode) darkColorScheme() else lightColorScheme()){Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+   Column(Modifier.weight(1f)){Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)}
+   TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark")}
+  }
   if(presenting){
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false}){Text("← Exit presentation")}
@@ -96,7 +98,7 @@ class MainActivity:ComponentActivity(){
    val shown=if(tab=="Service")base else base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
    if(tab=="Service"){
     Text("Service order · ${playlist.size} hymns",style=MaterialTheme.typography.labelMedium)
-    Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Start worship presentation")}
+    Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Present worship service")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
    LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
