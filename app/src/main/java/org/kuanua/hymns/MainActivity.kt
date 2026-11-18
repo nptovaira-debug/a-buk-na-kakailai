@@ -14,7 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.json.JSONObject
@@ -47,7 +50,23 @@ class MainActivity:ComponentActivity(){
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
  fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}
  fun moveService(n:String,delta:Int){val from=playlist.indexOf(n);val to=from+delta;if(from<0||to !in playlist.indices)return;val next=playlist.toMutableList();val item=next.removeAt(from);next.add(to,item);playlist=next;prefs.edit().putString("service_playlist",next.joinToString(",")).apply()}
- MaterialTheme(colorScheme=if(darkMode) darkColorScheme() else lightColorScheme()){Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
+ val modernTypography = Typography().copy(
+  displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-1.2).sp),
+  displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.8).sp),
+  headlineLarge = Typography().headlineLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.5).sp),
+  headlineMedium = Typography().headlineMedium.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.35).sp),
+  headlineSmall = Typography().headlineSmall.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.2).sp),
+  titleLarge = Typography().titleLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.2).sp),
+  titleMedium = Typography().titleMedium.copy(fontFamily = FontFamily.SansSerif),
+  titleSmall = Typography().titleSmall.copy(fontFamily = FontFamily.SansSerif),
+  bodyLarge = Typography().bodyLarge.copy(fontFamily = FontFamily.SansSerif, lineHeight = 27.sp),
+  bodyMedium = Typography().bodyMedium.copy(fontFamily = FontFamily.SansSerif, lineHeight = 24.sp),
+  bodySmall = Typography().bodySmall.copy(fontFamily = FontFamily.SansSerif),
+  labelLarge = Typography().labelLarge.copy(fontFamily = FontFamily.SansSerif),
+  labelMedium = Typography().labelMedium.copy(fontFamily = FontFamily.SansSerif),
+  labelSmall = Typography().labelSmall.copy(fontFamily = FontFamily.SansSerif)
+ )
+ MaterialTheme(colorScheme=if(darkMode) darkColorScheme() else lightColorScheme(), typography=modernTypography){Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
    Column(Modifier.weight(1f)){Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)}
    TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark")}
