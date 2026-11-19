@@ -1,6 +1,10 @@
 package org.kuanua.hymns
 
 import android.content.SharedPreferences
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.widget.Toast
 import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -118,6 +122,7 @@ class MainActivity:ComponentActivity(){
  onPrivacyOptionsClick:()->Unit
 ){
  val uriHandler = LocalUriHandler.current
+ val context = LocalContext.current
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
@@ -217,9 +222,20 @@ class MainActivity:ComponentActivity(){
    TextButton(onClick={opened=null}){Text("← Back")}
    Text(h.number.toString()+". "+displayHymnTitle(h),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.labelSmall)
-   Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){
-    OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Favourite saved" else "☆ Favourite")}
+   Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+    OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite")}
     OutlinedButton(onClick={addToService(h.number)}){Text(if(playlist.contains(h.number.toString()))"✓ In service" else "+ Service")}
+    TextButton(onClick={
+     val hymnText = h.number.toString()+". "+displayHymnTitle(h)+"\n\n"+h.verses.joinToString("\n\n"){v->"Verse "+v.number+"\n"+v.text}
+     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+     clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText))
+     Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()
+    }){Text("Copy")}
+    TextButton(onClick={
+     val hymnText = h.number.toString()+". "+displayHymnTitle(h)+"\n\n"+h.verses.joinToString("\n\n"){v->"Verse "+v.number+"\n"+v.text}
+     val send = Intent(Intent.ACTION_SEND).apply{type="text/plain";putExtra(Intent.EXTRA_SUBJECT,"Hymn "+h.number+" – "+displayHymnTitle(h));putExtra(Intent.EXTRA_TEXT,hymnText)}
+     context.startActivity(Intent.createChooser(send,"Share hymn"))
+    }){Text("Share")}
     TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")}
     TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}
    }
@@ -406,7 +422,7 @@ private fun WelcomeScreen() {
   )
   Box(Modifier.fillMaxSize().background(Color(0xCC10080D)))
   Column(
-   modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
+   modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
    verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
