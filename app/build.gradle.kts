@@ -17,8 +17,7 @@ android {
         }
         release {
             buildConfigField("String", "ADMOB_BANNER_AD_UNIT_ID", "\"ca-app-pub-9608341092298145/6380345478\"")
-            // Native ads stay disabled in release until a real native ad unit is created in AdMob.
-            buildConfigField("String", "ADMOB_NATIVE_AD_UNIT_ID", "\"\"")
+            buildConfigField("String", "ADMOB_NATIVE_AD_UNIT_ID", "\"ca-app-pub-9608341092298145/9144616320\"")
         }
     }
 }
