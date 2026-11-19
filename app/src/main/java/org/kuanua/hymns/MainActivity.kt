@@ -2,6 +2,10 @@ package org.kuanua.hymns
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -21,7 +25,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONObject
 
 private data class Verse(val number:String,val text:String)
@@ -33,6 +38,7 @@ private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.nu
 class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){
   super.onCreate(savedInstanceState)
+  MobileAds.initialize(this) {}
   val data=JSONObject(assets.open("hymns.json").bufferedReader().use{it.readText()}).getJSONArray("hymns")
   val hymns=(0 until data.length()).map{i->val h=data.getJSONObject(i);val v=h.getJSONArray("stanzas");Hymn(h.getInt("number"),h.getString("sectionId"),h.optString("title"),h.optString("sourceReference"),(0 until v.length()).map{j->val x=v.getJSONObject(j);Verse(x.getString("number"),x.getString("text"))})}
   val raw=JSONObject(assets.open("sections.json").bufferedReader().use{it.readText()}).getJSONArray("sections")
@@ -154,9 +160,31 @@ class MainActivity:ComponentActivity(){
     Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Present worship service")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
-   LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
+   AdMobBanner()
   }
  }}}
+}
+
+
+@Composable
+private fun AdMobBanner() {
+ val context = LocalContext.current
+ val adView = remember {
+  AdView(context).apply {
+   adUnitId = "ca-app-pub-3940256099942544/9214589741"
+   val availableWidth = (context.resources.configuration.screenWidthDp - 32).coerceAtLeast(320)
+   setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, availableWidth))
+   loadAd(AdRequest.Builder().build())
+  }
+ }
+ DisposableEffect(adView) {
+  onDispose { adView.destroy() }
+ }
+ AndroidView(
+  factory = { adView },
+  modifier = Modifier.fillMaxWidth()
+ )
 }
