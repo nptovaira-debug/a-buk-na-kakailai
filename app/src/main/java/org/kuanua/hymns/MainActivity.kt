@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -66,10 +67,36 @@ class MainActivity:ComponentActivity(){
   labelMedium = Typography().labelMedium.copy(fontFamily = FontFamily.SansSerif),
   labelSmall = Typography().labelSmall.copy(fontFamily = FontFamily.SansSerif)
  )
- MaterialTheme(colorScheme=if(darkMode) darkColorScheme() else lightColorScheme(), typography=modernTypography){Surface(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-   Column(Modifier.weight(1f)){Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.headlineSmall,fontWeight=FontWeight.Bold);Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall)}
-   TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark")}
+ val maroon=Color(0xFF681F36)
+ val gold=Color(0xFFB99456)
+ val ivory=Color(0xFFF7F4F0)
+ val sage=Color(0xFF526B5D)
+ val lightPalette=lightColorScheme(
+  primary=maroon,onPrimary=Color.White,primaryContainer=Color(0xFFF1E3E8),onPrimaryContainer=Color(0xFF4D172A),
+  secondary=gold,onSecondary=Color(0xFF241A08),secondaryContainer=Color(0xFFF3EBDD),onSecondaryContainer=Color(0xFF493719),
+  tertiary=sage,onTertiary=Color.White,background=ivory,onBackground=Color(0xFF29242A),
+  surface=Color(0xFFFFFEFC),onSurface=Color(0xFF29242A),surfaceVariant=Color(0xFFF0EAE6),
+  onSurfaceVariant=Color(0xFF62585D),outline=Color(0xFFD9CDD0),outlineVariant=Color(0xFFE9E0E2)
+ )
+ val darkPalette=darkColorScheme(
+  primary=Color(0xFFD9A6B6),onPrimary=Color(0xFF421326),primaryContainer=Color(0xFF5A2439),onPrimaryContainer=Color(0xFFFFD9E3),
+  secondary=Color(0xFFD7B875),onSecondary=Color(0xFF392B0D),secondaryContainer=Color(0xFF51401B),onSecondaryContainer=Color(0xFFF5E1B0),
+  tertiary=Color(0xFFB1CDBB),background=Color(0xFF171317),surface=Color(0xFF241D22),
+  onSurface=Color(0xFFF1E9ED),surfaceVariant=Color(0xFF382D34),onSurfaceVariant=Color(0xFFD0C1C8),
+  outline=Color(0xFF8B7780)
+ )
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Column(Modifier.fillMaxSize().padding(16.dp)){
+  Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
+   Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=18.dp),horizontalArrangement=Arrangement.SpaceBetween){
+    Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(12.dp)){
+     Text("▤",fontSize=28.sp,color=MaterialTheme.colorScheme.onPrimary)
+     Column(Modifier.weight(1f)){
+      Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
+      Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f))
+     }
+    }
+    TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark",color=MaterialTheme.colorScheme.onPrimary)}
+   }
   }
   if(presenting){
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
