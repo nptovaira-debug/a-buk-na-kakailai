@@ -8,6 +8,7 @@ import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -200,11 +202,16 @@ private fun WelcomeScreen() {
  val maroon = Color(0xFF681F36)
  val gold = Color(0xFFB99456)
  Box(
-  modifier = Modifier
-   .fillMaxSize()
-   .background(maroon),
+  modifier = Modifier.fillMaxSize(),
   contentAlignment = androidx.compose.ui.Alignment.Center
  ) {
+  Image(
+   painter = painterResource(id = R.drawable.welcome_background),
+   contentDescription = "Church beside the bay with an open hymn book",
+   modifier = Modifier.fillMaxSize(),
+   contentScale = androidx.compose.ui.layout.ContentScale.Crop
+  )
+  Box(Modifier.fillMaxSize().background(Color(0x990F0A0D)))
   Column(
    modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
