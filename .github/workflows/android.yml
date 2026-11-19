@@ -36,6 +36,7 @@ jobs:
       - name: Validate shared hymn data
         run: python3 scripts/validate_hymns.py
       - name: Prepare optional release signing key
+        continue-on-error: true
         run: |
           if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
             python3 - <<'PY'
