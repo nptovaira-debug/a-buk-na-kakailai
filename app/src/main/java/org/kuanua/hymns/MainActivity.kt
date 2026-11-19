@@ -364,8 +364,8 @@ private fun NativeAdCard() {
 
 @Composable
 private fun WelcomeScreen() {
- val maroon = Color(0xFF681F36)
- val gold = Color(0xFFB99456)
+ val gold = Color(0xFFD6B875)
+ val ivory = Color(0xFFFFF8F0)
  Box(
   modifier = Modifier.fillMaxSize(),
   contentAlignment = androidx.compose.ui.Alignment.Center
@@ -376,49 +376,99 @@ private fun WelcomeScreen() {
    modifier = Modifier.fillMaxSize(),
    contentScale = androidx.compose.ui.layout.ContentScale.Crop
   )
-  Box(Modifier.fillMaxSize().background(Color(0x990F0A0D)))
+  Box(Modifier.fillMaxSize().background(Color(0xCC10080D)))
   Column(
-   modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
+   modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp),
    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-   verticalArrangement = Arrangement.spacedBy(14.dp)
+   verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-   Text("▤", fontSize = 54.sp, color = gold)
+   Box(
+    modifier = Modifier
+     .background(Color(0x553D1726), MaterialTheme.shapes.extraLarge)
+     .padding(horizontal = 16.dp, vertical = 8.dp)
+   ) {
+    Text(
+     "A TREASURE OF KUANUA HYMNS",
+     fontSize = 10.sp,
+     fontWeight = FontWeight.Bold,
+     letterSpacing = 2.sp,
+     color = gold
+    )
+   }
    Text(
-    "A BUK NA KAKAILAI",
-    fontSize = 29.sp,
+    "A BUK NA\nKAKAILAI",
+    fontSize = 36.sp,
+    lineHeight = 42.sp,
     fontFamily = FontFamily.Serif,
-    fontWeight = FontWeight.SemiBold,
-    color = Color.White,
+    fontWeight = FontWeight.Bold,
+    color = ivory,
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
    )
    Text(
     "KUANUA HYMNS",
     fontSize = 14.sp,
-    fontWeight = FontWeight.Medium,
+    fontWeight = FontWeight.SemiBold,
+    letterSpacing = 4.sp,
     color = gold
    )
-   Spacer(Modifier.height(10.dp))
-   HorizontalDivider(color = gold.copy(alpha = 0.65f), thickness = 1.dp)
-   Text(
-    "Hymns sourced from the 1960 Kuanua Catechism and Hymn Book",
-    fontSize = 15.sp,
-    color = Color.White,
-    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   Spacer(Modifier.height(4.dp))
+   HorizontalDivider(
+    modifier = Modifier.fillMaxWidth(0.72f),
+    color = gold.copy(alpha = 0.8f),
+    thickness = 1.dp
    )
    Text(
-    "A Buk na Tinir, Ma A Buk na Kakailai Ure Ra Lotu",
-    fontSize = 15.sp,
+    "Welcome",
+    fontSize = 22.sp,
     fontFamily = FontFamily.Serif,
-    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-    color = Color.White.copy(alpha = 0.9f),
-    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+    fontWeight = FontWeight.SemiBold,
+    color = ivory
    )
    Text(
-    "250 Hymns · Blanche Bay Dialect · 1960 Edition",
-    fontSize = 13.sp,
-    fontWeight = FontWeight.Normal,
-    color = gold,
+    "A place to read, revisit and prepare the hymns that have accompanied generations in worship.",
+    fontSize = 16.sp,
+    lineHeight = 25.sp,
+    color = ivory.copy(alpha = 0.94f),
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   )
+   Spacer(Modifier.height(6.dp))
+   Column(
+    modifier = Modifier
+     .fillMaxWidth()
+     .background(Color(0x55301821), MaterialTheme.shapes.large)
+     .padding(horizontal = 18.dp, vertical = 16.dp),
+    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(7.dp)
+   ) {
+    Text(
+     "ROOTED IN A 1960 EDITION",
+     fontSize = 10.sp,
+     fontWeight = FontWeight.Bold,
+     letterSpacing = 1.6.sp,
+     color = gold
+    )
+    Text(
+     "A Buk na Tinir, ma A Buk na Kakailai ure ra Lotu, ma A Lotu na Pupunang",
+     fontSize = 14.sp,
+     lineHeight = 21.sp,
+     fontFamily = FontFamily.Serif,
+     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+     color = ivory,
+     textAlign = androidx.compose.ui.text.style.TextAlign.Center
+    )
+    Text(
+     "250 hymns  •  Blanche Bay Dialect",
+     fontSize = 12.sp,
+     color = gold,
+     textAlign = androidx.compose.ui.text.style.TextAlign.Center
+    )
+   }
+   Text(
+    "READ  ·  REMEMBER  ·  WORSHIP",
+    fontSize = 10.sp,
+    fontWeight = FontWeight.SemiBold,
+    letterSpacing = 2.sp,
+    color = ivory.copy(alpha = 0.8f)
    )
   }
  }
