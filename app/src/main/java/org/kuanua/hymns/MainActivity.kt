@@ -213,17 +213,17 @@ private fun WelcomeScreen() {
    Text("▤", fontSize = 54.sp, color = gold)
    Text(
     "A BUK NA KAKAILAI",
-    fontSize = 27.sp,
-    fontWeight = FontWeight.Bold,
+    fontSize = 29.sp,
+    fontFamily = FontFamily.Serif,
+    fontWeight = FontWeight.SemiBold,
     color = Color.White,
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
    )
    Text(
     "KUANUA HYMNS",
     fontSize = 14.sp,
-    fontWeight = FontWeight.SemiBold,
-    color = gold,
-    letterSpacing = 2.sp
+    fontWeight = FontWeight.Medium,
+    color = gold
    )
    Spacer(Modifier.height(10.dp))
    HorizontalDivider(color = gold.copy(alpha = 0.65f), thickness = 1.dp)
@@ -235,14 +235,16 @@ private fun WelcomeScreen() {
    )
    Text(
     "A Buk na Tinir, Ma A Buk na Kakailai Ure Ra Lotu",
-    fontSize = 14.sp,
+    fontSize = 15.sp,
+    fontFamily = FontFamily.Serif,
+    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
     color = Color.White.copy(alpha = 0.9f),
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
    )
    Text(
     "250 Hymns · Blanche Bay Dialect · 1960 Edition",
     fontSize = 13.sp,
-    fontWeight = FontWeight.Medium,
+    fontWeight = FontWeight.Normal,
     color = gold,
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
    )
