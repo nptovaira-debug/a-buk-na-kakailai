@@ -17,7 +17,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.11.1'
       - name: Bundle Inter font
         run: |
           mkdir -p app/src/main/res/font
@@ -32,6 +32,14 @@ jobs:
         run: python3 scripts/validate_hymns.py
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
+      - name: Build release Android App Bundle
+        run: gradle --no-daemon bundleRelease
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: a-buk-na-kakailai-release-aab-unsigned
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
