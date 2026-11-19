@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -48,6 +49,8 @@ class MainActivity:ComponentActivity(){
 }
 
 @Composable private fun HymnApp(hymns:List<Hymn>,sections:List<Section>,prefs:SharedPreferences){
+ var showWelcome by remember{mutableStateOf(true)}
+ LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
@@ -98,7 +101,7 @@ class MainActivity:ComponentActivity(){
   onSurface=Color(0xFFF1E9ED),surfaceVariant=Color(0xFF382D34),onSurfaceVariant=Color(0xFFD0C1C8),
   outline=Color(0xFF8B7780)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Column(Modifier.fillMaxSize().padding(16.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
    Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=18.dp),horizontalArrangement=Arrangement.SpaceBetween){
     Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(12.dp)){
@@ -165,6 +168,8 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    AdMobBanner()
   }
+ }
+ if(showWelcome) WelcomeScreen()
  }}}
 }
 
@@ -187,4 +192,60 @@ private fun AdMobBanner() {
   factory = { adView },
   modifier = Modifier.fillMaxWidth()
  )
+}
+
+
+@Composable
+private fun WelcomeScreen() {
+ val maroon = Color(0xFF681F36)
+ val gold = Color(0xFFB99456)
+ Box(
+  modifier = Modifier
+   .fillMaxSize()
+   .background(maroon),
+  contentAlignment = androidx.compose.ui.Alignment.Center
+ ) {
+  Column(
+   modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
+   horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+   verticalArrangement = Arrangement.spacedBy(14.dp)
+  ) {
+   Text("▤", fontSize = 54.sp, color = gold)
+   Text(
+    "A BUK NA KAKAILAI",
+    fontSize = 27.sp,
+    fontWeight = FontWeight.Bold,
+    color = Color.White,
+    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   )
+   Text(
+    "KUANUA HYMNS",
+    fontSize = 14.sp,
+    fontWeight = FontWeight.SemiBold,
+    color = gold,
+    letterSpacing = 2.sp
+   )
+   Spacer(Modifier.height(10.dp))
+   HorizontalDivider(color = gold.copy(alpha = 0.65f), thickness = 1.dp)
+   Text(
+    "Hymns sourced from the 1960 Kuanua Catechism and Hymn Book",
+    fontSize = 15.sp,
+    color = Color.White,
+    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   )
+   Text(
+    "A Buk na Tinir, Ma A Buk na Kakailai Ure Ra Lotu",
+    fontSize = 14.sp,
+    color = Color.White.copy(alpha = 0.9f),
+    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   )
+   Text(
+    "Blanche Bay Dialect · 1960 Edition",
+    fontSize = 13.sp,
+    fontWeight = FontWeight.Medium,
+    color = gold,
+    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+   )
+  }
+ }
 }
