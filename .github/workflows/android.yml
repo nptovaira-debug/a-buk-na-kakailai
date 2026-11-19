@@ -43,12 +43,26 @@ jobs:
           value = os.environ["RELEASE_KEYSTORE_BASE64"]
           value = re.sub(r"[^A-Za-z0-9+/=]", "", value)
           value += "=" * ((-len(value)) % 4)
-          with open(os.path.join(os.environ["RUNNER_TEMP"], "upload-key.jks"), "wb") as f:
-              f.write(base64.b64decode(value))
+          output = os.path.join(os.environ["RUNNER_TEMP"], "upload-key.jks")
+          with open(output, "wb") as f:
+              f.write(base64.b64decode(value, validate=True))
           PY
-            keytool -list -keystore "$RUNNER_TEMP/upload-key.jks" -storepass "$RELEASE_STORE_PASSWORD" >/dev/null
+            echo "Decoded keystore size: $(wc -c < "$RUNNER_TEMP/upload-key.jks") bytes"
+            echo "Decoded keystore SHA-256: $(sha256sum "$RUNNER_TEMP/upload-key.jks" | cut -d' ' -f1)"
+            if ! echo "abf959d5b58102e49de32b0e973da9869bd10971680f54f31390d2e6b042c57b  $RUNNER_TEMP/upload-key.jks" | sha256sum --check --status; then
+              echo "::error::The Base64 secret does not match the original upload keystore. Replace RELEASE_KEYSTORE_BASE64 using the original keystore-base64.txt file."
+              exit 1
+            fi
+            if ! keytool -list -keystore "$RUNNER_TEMP/upload-key.jks" -storepass "$RELEASE_STORE_PASSWORD"; then
+              echo "::error::The keystore file matches the original, but RELEASE_STORE_PASSWORD was rejected. Check it against the original signing-details.txt."
+              exit 1
+            fi
+            if ! keytool -list -alias "$RELEASE_KEY_ALIAS" -keystore "$RUNNER_TEMP/upload-key.jks" -storepass "$RELEASE_STORE_PASSWORD" >/dev/null; then
+              echo "::error::RELEASE_KEY_ALIAS does not match the alias in the original keystore."
+              exit 1
+            fi
             echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/upload-key.jks" >> "$GITHUB_ENV"
-            echo "Release signing credentials found; release bundle will be signed."
+            echo "Release keystore and alias validated; release bundle will be signed."
           else
             echo "Release signing credentials are not configured; release bundle will remain unsigned."
           fi
