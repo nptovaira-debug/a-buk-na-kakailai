@@ -1,6 +1,8 @@
 package org.kuanua.hymns
 
 import android.content.SharedPreferences
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -57,6 +59,62 @@ private data class Hymn(val number:Int,val sectionId:String,val title:String,val
 private data class Section(val id:String,val title:String)
 
 private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.number}\\.\\s*"), "").ifBlank { "Hymn ${h.number}" }
+
+private const val BACKUP_APP_ID = "org.kuanua.hymns"
+private const val BACKUP_FORMAT_VERSION = 1
+
+private fun createBackupJson(prefs: SharedPreferences): String {
+ val values = JSONObject()
+ prefs.all.toSortedMap().forEach { (key, value) ->
+  val entry = JSONObject()
+  when (value) {
+   is String -> { entry.put("type", "string"); entry.put("value", value) }
+   is Boolean -> { entry.put("type", "boolean"); entry.put("value", value) }
+   is Int -> { entry.put("type", "int"); entry.put("value", value) }
+   is Long -> { entry.put("type", "long"); entry.put("value", value) }
+   is Float -> { entry.put("type", "float"); entry.put("value", value.toDouble()) }
+   is Set<*> -> {
+    if (value.all { it is String }) {
+     entry.put("type", "string_set")
+     entry.put("value", org.json.JSONArray(value.sorted()))
+    }
+   }
+  }
+  if (entry.has("type")) values.put(key, entry)
+ }
+ return JSONObject().put("appId", BACKUP_APP_ID)
+  .put("formatVersion", BACKUP_FORMAT_VERSION)
+  .put("createdAt", java.time.Instant.now().toString())
+  .put("preferences", values).toString(2)
+}
+
+private fun restoreBackupJson(prefs: SharedPreferences, json: String) {
+ val root = JSONObject(json)
+ require(root.optString("appId") == BACKUP_APP_ID) { "This backup belongs to a different app." }
+ require(root.optInt("formatVersion", -1) == BACKUP_FORMAT_VERSION) { "This backup format is not supported." }
+ val values = root.optJSONObject("preferences") ?: throw IllegalArgumentException("The backup contains no saved data.")
+ val editor = prefs.edit().clear()
+ val keys = values.keys()
+ while (keys.hasNext()) {
+  val key = keys.next()
+  require(key.isNotBlank() && key.length <= 200) { "The backup contains an invalid setting." }
+  val entry = values.optJSONObject(key) ?: throw IllegalArgumentException("Invalid saved setting: $key")
+  when (entry.optString("type")) {
+   "string" -> editor.putString(key, entry.getString("value"))
+   "boolean" -> editor.putBoolean(key, entry.getBoolean("value"))
+   "int" -> editor.putInt(key, entry.getInt("value"))
+   "long" -> editor.putLong(key, entry.getLong("value"))
+   "float" -> editor.putFloat(key, entry.getDouble("value").toFloat())
+   "string_set" -> {
+    val array = entry.optJSONArray("value") ?: throw IllegalArgumentException("Invalid saved list: $key")
+    val set = (0 until array.length()).map { array.getString(it) }.toSet()
+    editor.putStringSet(key, set)
+   }
+   else -> throw IllegalArgumentException("The backup contains an unsupported setting type.")
+  }
+ }
+ check(editor.commit()) { "Could not save the restored data. Please try again." }
+}
 
 class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){
@@ -123,6 +181,39 @@ class MainActivity:ComponentActivity(){
 ){
  val uriHandler = LocalUriHandler.current
  val context = LocalContext.current
+ var backupMessage by remember { mutableStateOf<String?>(null) }
+ val exportBackup = rememberLauncherForActivityResult(
+  ActivityResultContracts.CreateDocument("application/json")
+ ) { uri ->
+  if (uri != null) {
+   try {
+    context.contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
+     it.write(createBackupJson(prefs))
+    } ?: throw IllegalStateException("Could not create the backup file.")
+    backupMessage = "Backup saved successfully."
+    Toast.makeText(context, "Backup saved", Toast.LENGTH_SHORT).show()
+   } catch (error: Exception) {
+    backupMessage = "Backup failed: ${error.localizedMessage ?: "please try again"}"
+    Toast.makeText(context, "Could not save backup", Toast.LENGTH_LONG).show()
+   }
+  }
+ }
+ val importBackup = rememberLauncherForActivityResult(
+  ActivityResultContracts.OpenDocument()
+ ) { uri ->
+  if (uri != null) {
+   try {
+    val json = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+     ?: throw IllegalStateException("Could not read the selected file.")
+    restoreBackupJson(prefs, json)
+    Toast.makeText(context, "Backup restored. Reloading app…", Toast.LENGTH_LONG).show()
+    (context as? ComponentActivity)?.recreate()
+   } catch (error: Exception) {
+    backupMessage = "Restore failed: ${error.localizedMessage ?: "the file may be invalid"}"
+    Toast.makeText(context, "Could not restore backup", Toast.LENGTH_LONG).show()
+   }
+  }
+ }
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
@@ -200,7 +291,15 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
-  TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.align(androidx.compose.ui.Alignment.Start)){Text("Privacy Policy",style=MaterialTheme.typography.labelSmall)}
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+   TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")}) { Text("Privacy Policy",style=MaterialTheme.typography.labelSmall) }
+   Spacer(Modifier.weight(1f))
+   TextButton(onClick={exportBackup.launch("A_Buk_na_Kakailai_Backup.json")}) { Text("Export backup",style=MaterialTheme.typography.labelSmall) }
+   TextButton(onClick={importBackup.launch(arrayOf("application/json","text/*"))}) { Text("Restore",style=MaterialTheme.typography.labelSmall) }
+  }
+  backupMessage?.let { message ->
+   Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
+  }
   if(presenting){
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false}){Text("← Exit presentation")}
