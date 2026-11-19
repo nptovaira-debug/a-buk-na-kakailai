@@ -38,7 +38,7 @@ jobs:
       - name: Prepare optional release signing key
         run: |
           if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload-key.jks"
+            printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/upload-key.jks"
             echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/upload-key.jks" >> "$GITHUB_ENV"
             echo "Release signing credentials found; release bundle will be signed."
           else
@@ -51,7 +51,7 @@ jobs:
       - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: a-buk-na-kakailai-release-aab-unsigned
+          name: a-buk-na-kakailai-release-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Upload debug APK
