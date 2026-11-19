@@ -170,7 +170,7 @@ class MainActivity:ComponentActivity(){
   onSurface=Color(0xFFF1E9ED),surfaceVariant=Color(0xFF382D34),onSurfaceVariant=Color(0xFFD0C1C8),
   outline=Color(0xFF8B7780)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize()){Column(Modifier.fillMaxSize().padding(16.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
    Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=18.dp),horizontalArrangement=Arrangement.SpaceBetween){
     Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(12.dp)){
