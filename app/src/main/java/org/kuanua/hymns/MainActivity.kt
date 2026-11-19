@@ -164,11 +164,13 @@ class MainActivity:ComponentActivity(){
   onSurfaceVariant=Color(0xFF62585D),outline=Color(0xFFD9CDD0),outlineVariant=Color(0xFFE9E0E2)
  )
  val darkPalette=darkColorScheme(
-  primary=Color(0xFFD9A6B6),onPrimary=Color(0xFF421326),primaryContainer=Color(0xFF5A2439),onPrimaryContainer=Color(0xFFFFD9E3),
-  secondary=Color(0xFFD7B875),onSecondary=Color(0xFF392B0D),secondaryContainer=Color(0xFF51401B),onSecondaryContainer=Color(0xFFF5E1B0),
-  tertiary=Color(0xFFB1CDBB),background=Color(0xFF171317),surface=Color(0xFF241D22),
-  onSurface=Color(0xFFF1E9ED),surfaceVariant=Color(0xFF382D34),onSurfaceVariant=Color(0xFFD0C1C8),
-  outline=Color(0xFF8B7780)
+  primary=Color(0xFF963B56),onPrimary=Color(0xFFFFF7F2),primaryContainer=Color(0xFF572437),onPrimaryContainer=Color(0xFFFFDCE5),
+  secondary=Color(0xFFD6B875),onSecondary=Color(0xFF241A0A),secondaryContainer=Color(0xFF49391D),onSecondaryContainer=Color(0xFFF3E2BC),
+  tertiary=Color(0xFFA9BDAF),onTertiary=Color(0xFF17251D),tertiaryContainer=Color(0xFF304438),onTertiaryContainer=Color(0xFFD1E5D7),
+  background=Color(0xFF111214),onBackground=Color(0xFFF1ECE8),
+  surface=Color(0xFF1A1B1E),onSurface=Color(0xFFF1ECE8),
+  surfaceVariant=Color(0xFF29272B),onSurfaceVariant=Color(0xFFD0C6C7),
+  outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
  MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
