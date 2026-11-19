@@ -76,7 +76,7 @@ private fun createBackupJson(prefs: SharedPreferences): String {
    is Set<*> -> {
     if (value.all { it is String }) {
      entry.put("type", "string_set")
-     entry.put("value", org.json.JSONArray(value.sorted()))
+     entry.put("value", org.json.JSONArray(value.filterIsInstance<String>().sorted()))
     }
    }
   }
