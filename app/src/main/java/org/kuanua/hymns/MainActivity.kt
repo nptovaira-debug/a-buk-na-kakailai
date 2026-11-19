@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONObject
 
@@ -116,6 +117,7 @@ class MainActivity:ComponentActivity(){
  privacyOptionsRequired:Boolean,
  onPrivacyOptionsClick:()->Unit
 ){
+ val uriHandler = LocalUriHandler.current
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
@@ -184,6 +186,7 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
+  TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.align(androidx.compose.ui.Alignment.Start)){Text("Privacy Policy",style=MaterialTheme.typography.labelSmall)}
   if(presenting){
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false}){Text("← Exit presentation")}
