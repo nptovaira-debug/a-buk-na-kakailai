@@ -2,10 +2,23 @@ package org.kuanua.hymns
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
+import android.graphics.Typeface
+import android.graphics.Color as AndroidColor
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.nativead.NativeAdView
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -15,6 +28,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -42,16 +56,66 @@ private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.nu
 class MainActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){
   super.onCreate(savedInstanceState)
-  MobileAds.initialize(this) {}
+  val adsAllowed = mutableStateOf(false)
+  val privacyOptionsRequired = mutableStateOf(false)
+  var adsInitializationStarted = false
   val data=JSONObject(assets.open("hymns.json").bufferedReader().use{it.readText()}).getJSONArray("hymns")
   val hymns=(0 until data.length()).map{i->val h=data.getJSONObject(i);val v=h.getJSONArray("stanzas");Hymn(h.getInt("number"),h.getString("sectionId"),h.optString("title"),h.optString("sourceReference"),(0 until v.length()).map{j->val x=v.getJSONObject(j);Verse(x.getString("number"),x.getString("text"))})}
   val raw=JSONObject(assets.open("sections.json").bufferedReader().use{it.readText()}).getJSONArray("sections")
   val sections=(0 until raw.length()).map{i->val s=raw.getJSONObject(i);Section(s.getString("id"),s.getString("title"))}
-  setContent{HymnApp(hymns,sections,getSharedPreferences("hymnbook_local",MODE_PRIVATE))}
+  setContent {
+   HymnApp(
+    hymns,
+    sections,
+    getSharedPreferences("hymnbook_local",MODE_PRIVATE),
+    adsAllowed.value,
+    privacyOptionsRequired.value
+   ) {
+    UserMessagingPlatform.showPrivacyOptionsForm(this) {
+     privacyOptionsRequired.value =
+      UserMessagingPlatform.getConsentInformation(this).privacyOptionsRequirementStatus ==
+       ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+     if (UserMessagingPlatform.getConsentInformation(this).canRequestAds() && !adsInitializationStarted) {
+      adsInitializationStarted = true
+      MobileAds.initialize(this) { runOnUiThread { adsAllowed.value = true } }
+     }
+    }
+   }
+  }
+  val consentInformation = UserMessagingPlatform.getConsentInformation(this)
+  fun initializeAdsIfAllowed() {
+   privacyOptionsRequired.value =
+    consentInformation.privacyOptionsRequirementStatus ==
+     ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+   if (consentInformation.canRequestAds() && !adsInitializationStarted) {
+    adsInitializationStarted = true
+    MobileAds.initialize(this) { runOnUiThread { adsAllowed.value = true } }
+   }
+  }
+  val consentParameters = ConsentRequestParameters.Builder().build()
+  consentInformation.requestConsentInfoUpdate(
+   this,
+   consentParameters,
+   {
+    UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) {
+     initializeAdsIfAllowed()
+    }
+   },
+   {
+    initializeAdsIfAllowed()
+   }
+  )
  }
 }
 
-@Composable private fun HymnApp(hymns:List<Hymn>,sections:List<Section>,prefs:SharedPreferences){
+@Composable private fun HymnApp(
+ hymns:List<Hymn>,
+ sections:List<Section>,
+ prefs:SharedPreferences,
+ adsAllowed:Boolean,
+ privacyOptionsRequired:Boolean,
+ onPrivacyOptionsClick:()->Unit
+){
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
@@ -114,7 +178,10 @@ class MainActivity:ComponentActivity(){
       Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f))
      }
     }
-    TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark",color=MaterialTheme.colorScheme.onPrimary)}
+    Column(horizontalAlignment=androidx.compose.ui.Alignment.End) {
+     TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark",color=MaterialTheme.colorScheme.onPrimary)}
+     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)}
+    }
    }
   }
   if(presenting){
@@ -166,10 +233,29 @@ class MainActivity:ComponentActivity(){
     Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Present worship service")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
-   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){items(shown,key={it.number}){h->Card(Modifier.fillMaxWidth().clickable{open(h)}){Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){Column(Modifier.weight(1f)){Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold);if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)};if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")};TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")};TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}}else if(favs.contains(h.number.toString()))Text("★")}}}}
+   LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    itemsIndexed(shown,key={_,h->"hymn_${h.number}"}){index,h->
+     Card(Modifier.fillMaxWidth().clickable{open(h)}){
+      Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
+       Column(Modifier.weight(1f)){
+        Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold)
+        if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)
+       }
+       if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){
+        TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")}
+        TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")}
+        TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}
+       }else if(favs.contains(h.number.toString()))Text("★")
+      }
+     }
+     if(index==5 && tab!="Service" && adsAllowed && BuildConfig.ADMOB_NATIVE_AD_UNIT_ID.isNotBlank()) {
+      NativeAdCard()
+     }
+    }
+   }
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
-   AdMobBanner()
+   if(tab!="Service") AdMobBanner(adsAllowed)
   }
  }
  if(showWelcome) WelcomeScreen()
@@ -178,21 +264,94 @@ class MainActivity:ComponentActivity(){
 
 
 @Composable
-private fun AdMobBanner() {
+private fun AdMobBanner(adsAllowed:Boolean) {
+ if(!adsAllowed || BuildConfig.ADMOB_BANNER_AD_UNIT_ID.isBlank()) return
  val context = LocalContext.current
  val adView = remember {
   AdView(context).apply {
-   adUnitId = "ca-app-pub-3940256099942544/9214589741"
-   val availableWidth = (context.resources.configuration.screenWidthDp - 32).coerceAtLeast(320)
+   adUnitId = BuildConfig.ADMOB_BANNER_AD_UNIT_ID
+   val availableWidth = (context.resources.configuration.screenWidthDp - 32).coerceAtLeast(1)
    setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(context, availableWidth))
    loadAd(AdRequest.Builder().build())
   }
  }
- DisposableEffect(adView) {
-  onDispose { adView.destroy() }
+ DisposableEffect(adView) { onDispose { adView.destroy() } }
+ AndroidView(factory = { adView }, modifier = Modifier.fillMaxWidth())
+}
+
+@Composable
+private fun NativeAdCard() {
+ val context = LocalContext.current
+ val adUnitId = BuildConfig.ADMOB_NATIVE_AD_UNIT_ID
+ if(adUnitId.isBlank()) return
+ val nativeAdState = remember { mutableStateOf<NativeAd?>(null) }
+ DisposableEffect(adUnitId) {
+  val loader = AdLoader.Builder(context, adUnitId)
+   .forNativeAd { loadedAd ->
+    nativeAdState.value?.destroy()
+    nativeAdState.value = loadedAd
+   }
+   .withAdListener(object : com.google.android.gms.ads.AdListener() {
+    override fun onAdFailedToLoad(error: LoadAdError) {
+     // Do not retry automatically; avoids repeated requests on poor connections.
+    }
+   })
+   .withNativeAdOptions(NativeAdOptions.Builder().build())
+   .build()
+  loader.loadAd(AdRequest.Builder().build())
+  onDispose {
+   nativeAdState.value?.destroy()
+   nativeAdState.value = null
+  }
  }
+ val nativeAd = nativeAdState.value ?: return
  AndroidView(
-  factory = { adView },
+  factory = { viewContext ->
+   val adView = NativeAdView(viewContext)
+   val column = LinearLayout(viewContext).apply {
+    orientation = LinearLayout.VERTICAL
+    setPadding(18, 14, 18, 14)
+    background = android.graphics.drawable.GradientDrawable().apply {
+     setColor(AndroidColor.WHITE)
+     cornerRadius = 24f
+     setStroke(1, AndroidColor.rgb(225, 216, 219))
+    }
+   }
+   val label = TextView(viewContext).apply {
+    text = "ADVERTISEMENT"
+    textSize = 10f
+    setTextColor(AndroidColor.rgb(105, 31, 54))
+   }
+   val headline = TextView(viewContext).apply {
+    textSize = 16f
+    typeface = Typeface.DEFAULT_BOLD
+    setTextColor(AndroidColor.rgb(38, 32, 35))
+    setPadding(0, 8, 0, 4)
+   }
+   val body = TextView(viewContext).apply {
+    textSize = 13f
+    setTextColor(AndroidColor.DKGRAY)
+   }
+   val callToAction = TextView(viewContext).apply {
+    textSize = 14f
+    typeface = Typeface.DEFAULT_BOLD
+    setTextColor(AndroidColor.rgb(105, 31, 54))
+    setPadding(0, 10, 0, 0)
+   }
+   column.addView(label)
+   column.addView(headline)
+   column.addView(body)
+   column.addView(callToAction)
+   adView.addView(column, ViewGroup.LayoutParams(
+    ViewGroup.LayoutParams.MATCH_PARENT,
+    ViewGroup.LayoutParams.WRAP_CONTENT
+   ))
+   adView.headlineView = headline
+   adView.bodyView = body
+   adView.callToActionView = callToAction
+   adView
+  },
+  update = { adView -> adView.setNativeAd(nativeAd) },
   modifier = Modifier.fillMaxWidth()
  )
 }
