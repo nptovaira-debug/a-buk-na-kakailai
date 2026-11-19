@@ -38,7 +38,14 @@ jobs:
       - name: Prepare optional release signing key
         run: |
           if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_STORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=' | base64 --decode > "$RUNNER_TEMP/upload-key.jks"
+            python3 - <<'PY'
+          import base64, os, re
+          value = os.environ["RELEASE_KEYSTORE_BASE64"]
+          value = re.sub(r"[^A-Za-z0-9+/=]", "", value)
+          value += "=" * ((-len(value)) % 4)
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "upload-key.jks"), "wb") as f:
+              f.write(base64.b64decode(value))
+          PY
             keytool -list -keystore "$RUNNER_TEMP/upload-key.jks" -storepass "$RELEASE_STORE_PASSWORD" >/dev/null
             echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/upload-key.jks" >> "$GITHUB_ENV"
             echo "Release signing credentials found; release bundle will be signed."
