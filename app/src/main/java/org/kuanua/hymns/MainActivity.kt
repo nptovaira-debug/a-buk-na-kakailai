@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -51,21 +52,27 @@ class MainActivity:ComponentActivity(){
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
  fun removeFromService(n:String){playlist=playlist.filter{it!=n};prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}
  fun moveService(n:String,delta:Int){val from=playlist.indexOf(n);val to=from+delta;if(from<0||to !in playlist.indices)return;val next=playlist.toMutableList();val item=next.removeAt(from);next.add(to,item);playlist=next;prefs.edit().putString("service_playlist",next.joinToString(",")).apply()}
+ val interFamily = FontFamily(
+  Font(R.font.inter_regular, FontWeight.Normal),
+  Font(R.font.inter_medium, FontWeight.Medium),
+  Font(R.font.inter_semibold, FontWeight.SemiBold),
+  Font(R.font.inter_bold, FontWeight.Bold)
+ )
  val modernTypography = Typography().copy(
-  displayLarge = Typography().displayLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-1.2).sp),
-  displayMedium = Typography().displayMedium.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.8).sp),
-  headlineLarge = Typography().headlineLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.5).sp),
-  headlineMedium = Typography().headlineMedium.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.35).sp),
-  headlineSmall = Typography().headlineSmall.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.2).sp),
-  titleLarge = Typography().titleLarge.copy(fontFamily = FontFamily.SansSerif, letterSpacing = (-0.2).sp),
-  titleMedium = Typography().titleMedium.copy(fontFamily = FontFamily.SansSerif),
-  titleSmall = Typography().titleSmall.copy(fontFamily = FontFamily.SansSerif),
-  bodyLarge = Typography().bodyLarge.copy(fontFamily = FontFamily.SansSerif, lineHeight = 27.sp),
-  bodyMedium = Typography().bodyMedium.copy(fontFamily = FontFamily.SansSerif, lineHeight = 24.sp),
-  bodySmall = Typography().bodySmall.copy(fontFamily = FontFamily.SansSerif),
-  labelLarge = Typography().labelLarge.copy(fontFamily = FontFamily.SansSerif),
-  labelMedium = Typography().labelMedium.copy(fontFamily = FontFamily.SansSerif),
-  labelSmall = Typography().labelSmall.copy(fontFamily = FontFamily.SansSerif)
+  displayLarge = Typography().displayLarge.copy(fontFamily = interFamily, letterSpacing = (-1.2).sp),
+  displayMedium = Typography().displayMedium.copy(fontFamily = interFamily, letterSpacing = (-0.8).sp),
+  headlineLarge = Typography().headlineLarge.copy(fontFamily = interFamily, letterSpacing = (-0.5).sp),
+  headlineMedium = Typography().headlineMedium.copy(fontFamily = interFamily, letterSpacing = (-0.35).sp),
+  headlineSmall = Typography().headlineSmall.copy(fontFamily = interFamily, letterSpacing = (-0.2).sp),
+  titleLarge = Typography().titleLarge.copy(fontFamily = interFamily, letterSpacing = (-0.2).sp),
+  titleMedium = Typography().titleMedium.copy(fontFamily = interFamily),
+  titleSmall = Typography().titleSmall.copy(fontFamily = interFamily),
+  bodyLarge = Typography().bodyLarge.copy(fontFamily = interFamily, lineHeight = 27.sp),
+  bodyMedium = Typography().bodyMedium.copy(fontFamily = interFamily, lineHeight = 24.sp),
+  bodySmall = Typography().bodySmall.copy(fontFamily = interFamily),
+  labelLarge = Typography().labelLarge.copy(fontFamily = interFamily),
+  labelMedium = Typography().labelMedium.copy(fontFamily = interFamily),
+  labelSmall = Typography().labelSmall.copy(fontFamily = interFamily)
  )
  val maroon=Color(0xFF681F36)
  val gold=Color(0xFFB99456)
