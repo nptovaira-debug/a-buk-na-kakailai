@@ -237,7 +237,28 @@ class MainActivity:ComponentActivity(){
   }else{
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
    if(tab!="Service")OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text("Search number, title or lyrics")},singleLine=true)
-   if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState())){TextButton(onClick={section=null}){Text("All sections")};sections.forEach{s->TextButton(onClick={section=if(section==s.id)null else s.id}){Text(s.title)}}}
+   if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+    FilterChip(
+     selected=section==null,
+     onClick={section=null},
+     label={Text("All sections")},
+     colors=FilterChipDefaults.filterChipColors(
+      selectedContainerColor=MaterialTheme.colorScheme.primary,
+      selectedLabelColor=MaterialTheme.colorScheme.onPrimary
+     )
+    )
+    sections.forEach{s->
+     FilterChip(
+      selected=section==s.id,
+      onClick={section=s.id},
+      label={Text(s.title)},
+      colors=FilterChipDefaults.filterChipColors(
+       selectedContainerColor=MaterialTheme.colorScheme.primary,
+       selectedLabelColor=MaterialTheme.colorScheme.onPrimary
+      )
+     )
+    }
+   }
    val base=when(tab){"Favourites"->hymns.filter{favs.contains(it.number.toString())};"Recent"->recent.mapNotNull{id->hymns.find{it.number.toString()==id}};"Service"->playlist.mapNotNull{id->hymns.find{it.number.toString()==id}};else->hymns}
    val shown=if(tab=="Service")base else base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
    if(tab=="Service"){
