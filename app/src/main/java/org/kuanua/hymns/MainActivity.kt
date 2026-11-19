@@ -174,17 +174,24 @@ class MainActivity:ComponentActivity(){
  )
  MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding()){Column(Modifier.fillMaxSize().padding(16.dp)){
   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
-   Row(Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=18.dp),horizontalArrangement=Arrangement.SpaceBetween){
-    Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(12.dp)){
-     Text("▤",fontSize=28.sp,color=MaterialTheme.colorScheme.onPrimary)
-     Column(Modifier.weight(1f)){
-      Text("A BUK NA KAKAILAI",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
-      Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f))
+   Row(
+    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
+    horizontalArrangement=Arrangement.SpaceBetween,
+    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+   ){
+    Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(9.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+     Text("▤",fontSize=22.sp,color=MaterialTheme.colorScheme.onPrimary)
+     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)){
+      Text("A BUK NA KAKAILAI",fontSize=17.sp,lineHeight=20.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
+      Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=10.sp,lineHeight=13.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f))
      }
     }
-    Column(horizontalAlignment=androidx.compose.ui.Alignment.End) {
-     TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()}){Text(if(darkMode)"☀ Light" else "☾ Dark",color=MaterialTheme.colorScheme.onPrimary)}
-     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)}
+    Column(horizontalAlignment=androidx.compose.ui.Alignment.End,verticalArrangement=Arrangement.Center) {
+     TextButton(
+      onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},
+      contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)
+     ){Text(if(darkMode)"☀ Light" else "☾ Dark",fontSize=12.sp,color=MaterialTheme.colorScheme.onPrimary)}
+     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)}
     }
    }
   }
