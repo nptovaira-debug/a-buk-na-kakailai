@@ -240,7 +240,7 @@ private fun WelcomeScreen() {
     textAlign = androidx.compose.ui.text.style.TextAlign.Center
    )
    Text(
-    "Blanche Bay Dialect · 1960 Edition",
+    "250 Hymns · Blanche Bay Dialect · 1960 Edition",
     fontSize = 13.sp,
     fontWeight = FontWeight.Medium,
     color = gold,
