@@ -33,7 +33,7 @@ Run the structural check with `python3 scripts/validate_hymns.py`.
 
 ## Android build
 
-Open the repository in Android Studio and select the `app` configuration. The project uses Kotlin, Jetpack Compose, Java 17 and Android SDK 35. GitHub Actions builds a debug APK when Android project files change.
+Open the repository in Android Studio and select the `app` configuration. The project uses Kotlin, Jetpack Compose, Java 17 and Android SDK 36. GitHub Actions validates the shared hymn data and builds both a debug APK and a release Android App Bundle when Android project files change.
 
 The Android app currently reads bundled JSON assets and works offline for the core hymn list and reading screens. Favourites, notes, playlists, audio and sync remain future milestones.
 
@@ -44,3 +44,7 @@ The Android app currently reads bundled JSON assets and works offline for the co
 3. The included Pages workflow deploys the web edition when changes are pushed to `main`.
 
 For offline and install features, open the deployed HTTPS site in Chrome on Android.
+
+## Android app improvements
+
+The Android reader includes offline hymn reading, favourites, recent hymns, personal notes, service playlists, presentation mode, adjustable reading text, copy/share actions, light/dark themes, and consent-managed AdMob placements. Debug builds use Google's test ad unit IDs; release builds use the configured production ad unit IDs. The Play release still requires final device testing, store disclosures, and signing configuration.
