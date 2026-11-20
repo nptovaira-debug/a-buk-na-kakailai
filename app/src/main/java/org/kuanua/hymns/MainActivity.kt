@@ -616,7 +616,7 @@ class MainActivity:ComponentActivity(){
     enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
     exit=slideOutVertically(animationSpec=tween(220)) { -it } + fadeOut(animationSpec=tween(180))
    ) {
-    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
+    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
    }
    if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
