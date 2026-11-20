@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
@@ -305,7 +306,7 @@ class MainActivity:ComponentActivity(){
    .addOnFailureListener { adminMessage = "Review action failed. Please try again." }
  }
  val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
- BackHandler(enabled = opened != null || presenting || presentingHymn != null) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; opened != null -> opened = null } }
+ BackHandler(enabled = opened != null || presenting || presentingHymn != null || showAdminPanel) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; showAdminPanel -> showAdminPanel = false; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
