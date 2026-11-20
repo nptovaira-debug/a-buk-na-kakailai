@@ -364,7 +364,32 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
-  if(presenting || presentingHymn != null){
+  if(showAdminPanel){
+   Text("COMMUNITY RECORDING REVIEW",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
+   Text("Administrator access · ${adminUid ?: "Not signed in"}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+   Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    Button(onClick={loadPendingSubmissions()}){Text("Refresh")}
+    OutlinedButton(onClick={showAdminPanel=false}){Text("Close")}
+   }
+   adminMessage?.let { Text(it,style=MaterialTheme.typography.bodySmall) }
+   if(adminLoading) CircularProgressIndicator()
+   Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    pendingSubmissions.forEach { doc ->
+     Card(Modifier.fillMaxWidth()){
+      Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+       Text("Hymn ${doc.getLong("hymnNumber") ?: 0L}",fontWeight=FontWeight.Bold)
+       Text(doc.getString("title").orEmpty().ifBlank { doc.getString("platform") ?: "Recording" })
+       Text(doc.getString("platform") ?: "Other",style=MaterialTheme.typography.bodySmall)
+       Text(doc.getString("url").orEmpty(),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
+       Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+        Button(onClick={reviewSubmission(doc,true)}){Text("Approve")}
+        OutlinedButton(onClick={reviewSubmission(doc,false)}){Text("Reject")}
+       }
+      }
+     }
+    }
+   }
+  }else if(presenting || presentingHymn != null){
    val presentationHymns=if(presentingHymn != null) listOf(presentingHymn!!) else playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false;presentingHymn=null}){Text("✕ Exit full screen")}
    if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{
@@ -609,6 +634,23 @@ class MainActivity:ComponentActivity(){
     contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
    ) { Text("Privacy Policy",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+   if(adminUid != null) {
+    TextButton(onClick={
+     val uid=adminUid ?: return@TextButton
+     val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+     clipboard.setPrimaryClip(ClipData.newPlainText("Firebase user ID",uid))
+     Toast.makeText(context,"Device ID copied",Toast.LENGTH_SHORT).show()
+    },contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Copy device ID",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+    Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+    if(isAdmin) TextButton(onClick={showAdminPanel=true;loadPendingSubmissions()},contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Review recordings",fontSize=10.sp)}
+    else TextButton(onClick={
+     val uid=adminUid
+     if(uid != null) FirebaseFirestore.getInstance().collection("admins").document(uid).get()
+      .addOnSuccessListener { isAdmin=it.getBoolean("enabled")==true; Toast.makeText(context,if(isAdmin)"Administrator access enabled" else "Administrator access not yet enabled",Toast.LENGTH_SHORT).show() }
+      .addOnFailureListener { Toast.makeText(context,"Could not check administrator access",Toast.LENGTH_SHORT).show() }
+    },contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Check admin",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
+    Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+   }
    TextButton(
     onClick={exportBackup.launch("A_Buk_na_Kakailai_Backup.json")},
     contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
