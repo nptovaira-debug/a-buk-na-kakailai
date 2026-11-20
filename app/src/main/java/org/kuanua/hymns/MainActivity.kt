@@ -262,6 +262,48 @@ class MainActivity:ComponentActivity(){
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
+ var adminUid by remember { mutableStateOf<String?>(null) }
+ var isAdmin by remember { mutableStateOf(false) }
+ var showAdminPanel by remember { mutableStateOf(false) }
+ var pendingSubmissions by remember { mutableStateOf<List<com.google.firebase.firestore.DocumentSnapshot>>(emptyList()) }
+ var adminMessage by remember { mutableStateOf<String?>(null) }
+ var adminLoading by remember { mutableStateOf(false) }
+ LaunchedEffect(Unit) {
+  FirebaseAuth.getInstance().signInAnonymously()
+   .addOnSuccessListener { result ->
+    val uid = result.user?.uid ?: return@addOnSuccessListener
+    adminUid = uid
+    FirebaseFirestore.getInstance().collection("admins").document(uid).get()
+     .addOnSuccessListener { isAdmin = it.getBoolean("enabled") == true }
+   }
+ }
+ fun loadPendingSubmissions() {
+  adminLoading = true
+  FirebaseFirestore.getInstance().collection("recordingSubmissions")
+   .whereEqualTo("status", "pending")
+   .get()
+   .addOnSuccessListener { pendingSubmissions = it.documents; adminMessage = if (it.isEmpty) "No submissions are waiting for review." else null; adminLoading = false }
+   .addOnFailureListener { adminMessage = "Could not load submissions. Check your connection."; adminLoading = false }
+ }
+ fun reviewSubmission(doc: com.google.firebase.firestore.DocumentSnapshot, approve: Boolean) {
+  val db = FirebaseFirestore.getInstance()
+  val batch = db.batch()
+  if (approve) {
+   val recording = hashMapOf<String,Any>(
+    "hymnNumber" to (doc.getLong("hymnNumber") ?: 0L),
+    "platform" to (doc.getString("platform") ?: "Other"),
+    "title" to (doc.getString("title").orEmpty()),
+    "url" to (doc.getString("url") ?: ""),
+    "status" to "approved",
+    "submittedBy" to (doc.getString("submittedBy") ?: ""),
+    "approvedAt" to FieldValue.serverTimestamp()
+   )
+   batch.set(db.collection("recordings").document(doc.id), recording)
+  }
+  batch.update(doc.reference, "status", if (approve) "approved" else "rejected", "reviewedAt", FieldValue.serverTimestamp())
+  batch.commit().addOnSuccessListener { loadPendingSubmissions(); adminMessage = if (approve) "Recording approved and published." else "Submission rejected." }
+   .addOnFailureListener { adminMessage = "Review action failed. Please try again." }
+ }
  val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
  BackHandler(enabled = opened != null || presenting || presentingHymn != null) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
