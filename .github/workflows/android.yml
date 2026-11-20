@@ -23,16 +23,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Bundle Inter font
+      - name: Bundle Plus Jakarta Sans font
         run: |
           mkdir -p app/src/main/res/font
-          curl -fL --retry 3 https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip -o /tmp/inter.zip
-          mkdir -p /tmp/inter-fonts
-          unzip -j -o /tmp/inter.zip 'extras/ttf/Inter-Regular.ttf' 'extras/ttf/Inter-Medium.ttf' 'extras/ttf/Inter-SemiBold.ttf' 'extras/ttf/Inter-Bold.ttf' -d /tmp/inter-fonts
-          mv /tmp/inter-fonts/Inter-Regular.ttf app/src/main/res/font/inter_regular.ttf
-          mv /tmp/inter-fonts/Inter-Medium.ttf app/src/main/res/font/inter_medium.ttf
-          mv /tmp/inter-fonts/Inter-SemiBold.ttf app/src/main/res/font/inter_semibold.ttf
-          mv /tmp/inter-fonts/Inter-Bold.ttf app/src/main/res/font/inter_bold.ttf
+          curl -fL --retry 3 "https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf" -o app/src/main/res/font/plus_jakarta_sans.ttf
       - name: Validate shared hymn data
         run: python3 scripts/validate_hymns.py
       - name: Prepare optional release signing key
