@@ -426,7 +426,12 @@ class MainActivity:ComponentActivity(){
      }
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
-     Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=14.dp)){
+     Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=8.dp)){
+      Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+       IconButton(onClick={presenting=false;presentingHymn=null}){
+        Text("✕",fontSize=26.sp,fontWeight=FontWeight.Light,color=Color.White)
+       }
+      }
       Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
        Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=18.dp,bottom=8.dp))
        if(current.source.isNotBlank()) Text(current.source,fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=gold.copy(alpha=.9f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(bottom=18.dp))
