@@ -566,7 +566,7 @@ class MainActivity:ComponentActivity(){
     Box {
      OutlinedButton(onClick={sourceFilterExpanded=true},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Filter")}
      DropdownMenu(expanded=sourceFilterExpanded,onDismissRequest={sourceFilterExpanded=false}){
-      listOf("All sources","Has reference","M.H.B.","Other references").forEach { option ->
+      listOf("All sources","Has reference","M.H.B.","Other references","1200.S.","S.M.","German Tune","888.S.","Gypsy Smith's Hymnal","Alexander H.B.","M.S.S.H.B.","Tune: March of the Men of Harlech","Children's Hosannas","L.M.","C.M.","A.S.","Tune: Banner Anniversary H.B.","L. Tonkin","M.B.B.","Heart and Voice","Music by Thomas Troman").forEach { option ->
        DropdownMenuItem(text={Text(option)},onClick={sourceFilter=option;sourceFilterExpanded=false})
       }
      }
@@ -607,7 +607,8 @@ class MainActivity:ComponentActivity(){
      "Has reference" -> hymn.source.isNotBlank()
      "M.H.B." -> source.contains("mhb")
      "Other references" -> hymn.source.isNotBlank() && !source.contains("mhb")
-     else -> true
+     "All sources","Has reference" -> true
+     else -> source.contains(normalizeSearch(sourceFilter))
     }
     (tab!="All"||section==null||hymn.sectionId==section) && matchesQuery && matchesSource
    }
