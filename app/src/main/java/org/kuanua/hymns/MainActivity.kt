@@ -29,6 +29,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -305,7 +308,7 @@ class MainActivity:ComponentActivity(){
   batch.commit().addOnSuccessListener { loadPendingSubmissions(); adminMessage = if (approve) "Recording approved and published." else "Submission rejected." }
    .addOnFailureListener { adminMessage = "Review action failed. Please try again." }
  }
- val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
+ val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset { if (consumed.y < -6f) headerVisible = false else if (consumed.y > 6f) headerVisible = true; return Offset.Zero } } }
  BackHandler(enabled = opened != null || presenting || presentingHymn != null || showAdminPanel) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; showAdminPanel -> showAdminPanel = false; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
@@ -355,12 +358,28 @@ class MainActivity:ComponentActivity(){
   outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
  MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp)){
-  if (!presenting && presentingHymn == null) AnimatedVisibility(visible=headerVisible,enter=slideInVertically { -it },exit=slideOutVertically { -it }) {
+  if (!presenting && presentingHymn == null) AnimatedVisibility(
+   visible=headerVisible,
+   enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
+   exit=slideOutVertically(animationSpec=tween(220)) { -it } + fadeOut(animationSpec=tween(180))
+  ) {
    Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
-    Column(Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=12.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(2.dp)){
-     Text("A BUK NA KAKAILAI",fontSize=19.sp,lineHeight=23.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
-     Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=11.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
-     Row(horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){ TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)){Text(if(darkMode)"☀ Light" else "☾ Dark",fontSize=12.sp,color=MaterialTheme.colorScheme.onPrimary)}; if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)} }
+    Row(
+     Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp),
+     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+    ){
+     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)){
+      Text("A BUK NA KAKAILAI",fontSize=17.sp,lineHeight=21.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
+      Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=10.sp,lineHeight=13.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f))
+     }
+     IconButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},modifier=Modifier.size(38.dp)){
+      Text(if(darkMode)"☀" else "☾",fontSize=22.sp,color=MaterialTheme.colorScheme.onPrimary)
+     }
+     if(privacyOptionsRequired) {
+      TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){
+       Text("Privacy",fontSize=10.sp,color=MaterialTheme.colorScheme.onPrimary)
+      }
+     }
     }
    }
   }
