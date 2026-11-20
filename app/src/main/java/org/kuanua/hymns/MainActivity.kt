@@ -413,19 +413,58 @@ class MainActivity:ComponentActivity(){
    }
   }else if(presenting || presentingHymn != null){
    val presentationHymns=if(presentingHymn != null) listOf(presentingHymn!!) else playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
-   TextButton(onClick={presenting=false;presentingHymn=null}){Text("✕ Exit full screen")}
-   if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{
-    val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
-    Text(if(presentingHymn != null) "HYMN PRESENTATION" else "WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
-    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=12.dp),verticalArrangement=Arrangement.Center){
-     Text(current.number.toString()+". "+displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)
-     if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))
-     current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}
-    }
-    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=12.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
-     if(presentingHymn == null) OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}
-     Row(horizontalArrangement=Arrangement.spacedBy(4.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale+6} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
-     if(presentingHymn == null) Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}
+   val stage=Color(0xFF35101F)
+   val stageCard=Color(0xFF4A1A2D)
+   val gold=Color(0xFFE8C98A)
+   Box(Modifier.fillMaxSize().background(stage)){
+    if(presentationHymns.isEmpty()){
+     Column(Modifier.fillMaxSize().padding(28.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+      Text("♪",fontSize=42.sp,color=gold)
+      Text("Your worship service",style=MaterialTheme.typography.headlineSmall,color=Color.White,fontWeight=FontWeight.Bold)
+      Text("Add hymns to your Service list before starting presentation.",color=Color.White.copy(alpha=.78f),modifier=Modifier.padding(top=12.dp))
+      OutlinedButton(onClick={presenting=false;presentingHymn=null},modifier=Modifier.padding(top=24.dp),colors=ButtonDefaults.outlinedButtonColors(contentColor=gold)){Text("Close")}
+     }
+    }else{
+     val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
+     Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=14.dp)){
+      Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+       Column {
+        Text("A BUK NA KAKAILAI",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp,color=gold)
+        Text(if(presentingHymn != null) "HYMN PRESENTATION" else "WORSHIP SERVICE · ${presentationIndex+1} / ${presentationHymns.size}",fontSize=10.sp,color=Color.White.copy(alpha=.72f),modifier=Modifier.padding(top=3.dp))
+       }
+       IconButton(onClick={presenting=false;presentingHymn=null}){Text("✕",fontSize=22.sp,color=Color.White)}
+      }
+      Spacer(Modifier.height(18.dp))
+      Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.65f)))
+      Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+       Text("HYMN ${current.number}",fontSize=12.sp,fontWeight=FontWeight.SemiBold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=22.dp))
+       Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=12.dp,bottom=8.dp))
+       if(current.source.isNotBlank()) Text(current.source,fontSize=12.sp,color=Color.White.copy(alpha=.68f),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+       Spacer(Modifier.height(24.dp))
+       current.verses.forEach{v->
+        Surface(Modifier.fillMaxWidth().padding(bottom=14.dp),shape=MaterialTheme.shapes.large,color=stageCard){
+         Column(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=18.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+          Text("VERSE ${v.number}",fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp,color=gold)
+          Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,lineHeight=((scale+6)*1.55f).coerceAtMost(54f).sp,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(top=12.dp))
+         }
+        }
+       }
+       if(current.verses.isEmpty()) Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,color=Color.White.copy(alpha=.8f),modifier=Modifier.padding(top=20.dp))
+       Text("✦",fontSize=18.sp,color=gold,modifier=Modifier.padding(vertical=10.dp))
+      }
+      Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.4f)))
+      Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+       if(presentingHymn == null) OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0,colors=ButtonDefaults.outlinedButtonColors(contentColor=gold)){Text("‹  Previous")}
+       else Spacer(Modifier.width(4.dp))
+       Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(2.dp)){
+        TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()},colors=ButtonDefaults.textButtonColors(contentColor=gold)){Text("A−")}
+        Text("${scale+6}",fontSize=11.sp,color=Color.White.copy(alpha=.8f))
+        TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()},colors=ButtonDefaults.textButtonColors(contentColor=gold)){Text("A+")}
+       }
+       if(presentingHymn == null) Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex,colors=ButtonDefaults.buttonColors(containerColor=gold,contentColor=stage)){Text("Next hymn  ›")}
+       else Spacer(Modifier.width(4.dp))
+      }
+     }
     }
    }
   }else if(opened!=null){
