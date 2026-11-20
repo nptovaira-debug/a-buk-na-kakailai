@@ -373,7 +373,7 @@ class MainActivity:ComponentActivity(){
      verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
     ){
      Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)){
-      Text("A BUK NA KAKAILAI",fontSize=17.sp,lineHeight=21.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
+      Text("A BUK NA KAKAILAI",fontSize=20.sp,lineHeight=24.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary,letterSpacing=0.2.sp)
       Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=10.sp,lineHeight=13.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f))
      }
      IconButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},modifier=Modifier.size(38.dp)){
