@@ -291,7 +291,6 @@ class MainActivity:ComponentActivity(){
   }
   if(presenting || presentingHymn != null){
    val presentationHymns=if(presentingHymn != null) listOf(presentingHymn!!) else playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
-   val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false;presentingHymn=null}){Text("✕ Exit full screen")}
    if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{
     val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
@@ -314,7 +313,7 @@ class MainActivity:ComponentActivity(){
    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedButton(onClick={favourite(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite",maxLines=1)}
     OutlinedButton(onClick={addToService(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(playlist.contains(h.number.toString()))"✓ Service" else "+ Service",maxLines=1)}
-    TextButton(onClick={val hymnText=h.number.toString()+". "+displayHymnTitle(h)+"\\n\\n"+h.verses.joinToString("\\n\\n"){v->"Verse "+v.number+"\\n"+v.text};val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager;clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText));Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()},modifier=Modifier.weight(.7f),contentPadding=PaddingValues(horizontal=2.dp,vertical=8.dp)){Text("Copy")}
+    TextButton(onClick={val hymnText=h.number.toString()+". "+displayHymnTitle(h)+System.lineSeparator()+System.lineSeparator()+h.verses.joinToString(System.lineSeparator()+System.lineSeparator()){v->"Verse "+v.number+System.lineSeparator()+v.text};val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager;clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText));Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()},modifier=Modifier.weight(.7f),contentPadding=PaddingValues(horizontal=2.dp,vertical=8.dp)){Text("Copy")}
     OutlinedButton(onClick={presentationIndex=0;presentingHymn=h},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text("▶ Present",maxLines=1)}
    }
    Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("Text size",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
