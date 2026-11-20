@@ -61,6 +61,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONObject
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
 
 private data class Verse(val number:String,val text:String)
 private data class Hymn(val number:Int,val sectionId:String,val title:String,val source:String,val verses:List<Verse>)
@@ -257,6 +260,8 @@ class MainActivity:ComponentActivity(){
  var recordingUrl by remember { mutableStateOf("") }
  var recordingPlatform by remember { mutableStateOf("YouTube") }
  var recordingError by remember { mutableStateOf<String?>(null) }
+ var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
+ var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
  val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
  BackHandler(enabled = opened != null || presenting || presentingHymn != null) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
@@ -345,6 +350,23 @@ class MainActivity:ComponentActivity(){
    }
    Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("Text size",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
    val hymnRecordings=remember(h.number){mutableStateOf(loadHymnRecordings(prefs,h.number))}
+   LaunchedEffect(h.number) {
+    sharedRecordings = emptyList()
+    sharedRecordingsMessage = "Loading approved community recordings…"
+    FirebaseFirestore.getInstance().collection("recordings")
+     .whereEqualTo("hymnNumber", h.number)
+     .whereEqualTo("status", "approved")
+     .get()
+     .addOnSuccessListener { snapshot ->
+      sharedRecordings = snapshot.documents.mapNotNull { doc ->
+       val platform = doc.getString("platform") ?: return@mapNotNull null
+       val url = doc.getString("url") ?: return@mapNotNull null
+       HymnRecording(platform, doc.getString("title").orEmpty(), url)
+      }
+      sharedRecordingsMessage = if (sharedRecordings.isEmpty()) "No approved community recordings yet." else null
+     }
+     .addOnFailureListener { sharedRecordingsMessage = "Community recordings are temporarily unavailable." }
+   }
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
     Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
     Text("Add a recording from YouTube, Spotify, TikTok, Facebook or another website.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -362,7 +384,22 @@ class MainActivity:ComponentActivity(){
       }
      }
     }
-    Text("Recording links are currently saved on this device. They can be included in an exported backup.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp))
+    if (sharedRecordings.isNotEmpty()) {
+     Text("Community recordings",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=10.dp))
+     sharedRecordings.forEach { recording ->
+      Card(Modifier.fillMaxWidth().padding(vertical=3.dp)) {
+       Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+         Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
+         Text(recording.platform+" · Approved",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
+       }
+      }
+     }
+    }
+    sharedRecordingsMessage?.let { Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp)) }
+    Text("Your saved links are stored on this device. New community submissions are reviewed before appearing publicly.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp))
     if(h.verses.isEmpty())Text("This hymn is not reproduced in the supplied source scan. No lyrics have been added.")
     h.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=10.dp));Text(v.text,fontSize=scale.sp,modifier=Modifier.padding(vertical=8.dp))}
     HorizontalDivider()
@@ -401,11 +438,34 @@ class MainActivity:ComponentActivity(){
        } else if(hymnRecordings.value.any{it.url.equals(recordingUrl.trim(),ignoreCase=true)}) {
         recordingError="This recording link has already been added."
        } else {
-        val next=hymnRecordings.value+HymnRecording(recordingPlatform,recordingTitle.trim(),recordingUrl.trim())
-        hymnRecordings.value=next
-        saveHymnRecordings(prefs,h.number,next)
-        showRecordingDialog=false
-        Toast.makeText(context,"Recording link saved on this device",Toast.LENGTH_SHORT).show()
+        val newRecording=HymnRecording(recordingPlatform,recordingTitle.trim(),recordingUrl.trim())
+        FirebaseAuth.getInstance().signInAnonymously()
+         .addOnSuccessListener { authResult ->
+          val uid=authResult.user?.uid
+          if (uid == null) {
+           recordingError="Could not verify your submission. Please try again."
+          } else {
+           val submission=hashMapOf<String,Any>(
+            "hymnNumber" to h.number,
+            "platform" to recordingPlatform,
+            "title" to recordingTitle.trim(),
+            "url" to recordingUrl.trim(),
+            "status" to "pending",
+            "submittedBy" to uid,
+            "createdAt" to FieldValue.serverTimestamp()
+           )
+           FirebaseFirestore.getInstance().collection("recordingSubmissions").add(submission)
+            .addOnSuccessListener {
+             val next=hymnRecordings.value+newRecording
+             hymnRecordings.value=next
+             saveHymnRecordings(prefs,h.number,next)
+             showRecordingDialog=false
+             Toast.makeText(context,"Submitted for review. It will appear publicly after approval.",Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener { recordingError="Submission failed. Check your connection and try again." }
+          }
+         }
+         .addOnFailureListener { recordingError="Could not connect to the submission service. Please try again." }
        }
       }) { Text("Save link") }
      },
