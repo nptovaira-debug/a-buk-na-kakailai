@@ -427,7 +427,6 @@ class MainActivity:ComponentActivity(){
      }
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
-     var presentationVerseIndex by remember(current.number) { mutableIntStateOf(0) }
      Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=14.dp)){
       Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
        Column {
@@ -436,30 +435,23 @@ class MainActivity:ComponentActivity(){
        }
        IconButton(onClick={presenting=false;presentingHymn=null}){Text("✕",fontSize=22.sp,color=Color.White)}
       }
-      Spacer(Modifier.height(18.dp))
+      Spacer(Modifier.height(12.dp))
       Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.65f)))
-      Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
-       Text("HYMN ${current.number}",fontSize=12.sp,fontWeight=FontWeight.SemiBold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=22.dp))
-       Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=12.dp,bottom=8.dp))
-       if(current.source.isNotBlank()) Text(current.source,fontSize=12.sp,color=Color.White.copy(alpha=.68f),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
-       Spacer(Modifier.height(24.dp))
+      Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+       Text("HYMN ${current.number}",fontSize=12.sp,fontWeight=FontWeight.SemiBold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=18.dp))
+       Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=10.dp,bottom=8.dp))
+       if(current.source.isNotBlank()) Text(current.source,fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=gold.copy(alpha=.9f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(bottom=18.dp))
        if(current.verses.isNotEmpty()){
-        val verse=current.verses[presentationVerseIndex.coerceIn(0,current.verses.lastIndex)]
-        Surface(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=MaterialTheme.shapes.extraLarge,color=stageCard,tonalElevation=8.dp){
-         Column(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=28.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
-          Text("✦",fontSize=20.sp,color=gold)
-          Text("VERSE ${verse.number}",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=12.dp))
-          Text(verse.text,fontSize=(scale+7).coerceAtMost(38).sp,lineHeight=((scale+7)*1.55f).coerceAtMost(58f).sp,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(top=20.dp))
-          Text("✦",fontSize=20.sp,color=gold,modifier=Modifier.padding(top=18.dp))
+        current.verses.forEachIndexed { index, verse ->
+         Surface(Modifier.fillMaxWidth().padding(vertical=5.dp),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.88f)){
+          Column(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=14.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
+           Text("VERSE ${verse.number}",fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp,color=gold,modifier=Modifier.padding(bottom=8.dp))
+           Text(verse.text,fontSize=(scale+4).coerceAtMost(34).sp,lineHeight=((scale+4)*1.42f).coerceAtMost(48f).sp,fontWeight=FontWeight.SemiBold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+          }
          }
         }
-        Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
-         OutlinedButton(onClick={presentationVerseIndex=(presentationVerseIndex-1).coerceAtLeast(0)},enabled=presentationVerseIndex>0,colors=ButtonDefaults.outlinedButtonColors(contentColor=gold)){Text("‹")}
-         Text("  ${presentationVerseIndex+1} / ${current.verses.size}  ",fontSize=12.sp,color=Color.White.copy(alpha=.8f))
-         Button(onClick={presentationVerseIndex=(presentationVerseIndex+1).coerceAtMost(current.verses.lastIndex)},enabled=presentationVerseIndex<current.verses.lastIndex,colors=ButtonDefaults.buttonColors(containerColor=gold,contentColor=stage)){Text("Next verse  ›")}
-        }
        }else Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,color=Color.White.copy(alpha=.8f),modifier=Modifier.padding(top=20.dp))
-       Text("✦",fontSize=18.sp,color=gold,modifier=Modifier.padding(vertical=10.dp))
+       Text("✦",fontSize=18.sp,color=gold,modifier=Modifier.padding(vertical=12.dp))
       }
       Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.4f)))
       Row(Modifier.fillMaxWidth().padding(top=10.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
@@ -467,7 +459,7 @@ class MainActivity:ComponentActivity(){
        else Spacer(Modifier.width(4.dp))
        Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(2.dp)){
         TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()},colors=ButtonDefaults.textButtonColors(contentColor=gold)){Text("A−")}
-        Text("${scale+6}",fontSize=11.sp,color=Color.White.copy(alpha=.8f))
+        Text("${scale+4}",fontSize=11.sp,color=Color.White.copy(alpha=.8f))
         TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()},colors=ButtonDefaults.textButtonColors(contentColor=gold)){Text("A+")}
        }
        if(presentingHymn == null) Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex,colors=ButtonDefaults.buttonColors(containerColor=gold,contentColor=stage)){Text("Next hymn  ›")}
