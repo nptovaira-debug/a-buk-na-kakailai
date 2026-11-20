@@ -291,9 +291,6 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
-  backupMessage?.let { message ->
-   Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
-  }
   if(presenting){
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    TextButton(onClick={presenting=false}){Text("← Exit presentation")}
