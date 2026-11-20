@@ -6,11 +6,24 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 hymns_text = (root / "shared-data/hymns.json").read_text(encoding="utf-8")
 data = json.loads(hymns_text)
+edition_catalog = json.loads((root / "shared-data/editions.json").read_text(encoding="utf-8"))
 sections = json.loads((root / "shared-data/sections.json").read_text(encoding="utf-8"))["sections"]
 android = (root / "app/src/main/assets/hymns.json").read_text(encoding="utf-8")
 web = (root / "index.html").read_text(encoding="utf-8")
 sw = (root / "service-worker.js").read_text(encoding="utf-8")
 hymns = data["hymns"]
+
+# The current collection remains the unchanged 1960 edition. The catalog
+# establishes a stable edition identity before additional editions are added.
+assert edition_catalog["schemaVersion"] == 1
+assert edition_catalog["defaultEditionId"] == "kuanua-1960"
+assert len(edition_catalog["editions"]) == 1
+current_edition = edition_catalog["editions"][0]
+assert current_edition["id"] == "kuanua-1960"
+assert current_edition["hymnDataFile"] == "hymns.json"
+assert current_edition["sectionDataFile"] == "sections.json"
+assert current_edition["publicationYear"] == data["publicationYear"]
+assert current_edition["sourcePublication"] == data["sourcePublication"]
 
 assert len(hymns) == 250
 assert [h["number"] for h in hymns] == list(range(1, 251))
