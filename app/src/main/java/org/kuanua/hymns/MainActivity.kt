@@ -427,18 +427,8 @@ class MainActivity:ComponentActivity(){
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
      Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=14.dp)){
-      Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
-       Column {
-        Text("A BUK NA KAKAILAI",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp,color=gold)
-        Text(if(presentingHymn != null) "HYMN PRESENTATION" else "WORSHIP SERVICE · ${presentationIndex+1} / ${presentationHymns.size}",fontSize=10.sp,color=Color.White.copy(alpha=.72f),modifier=Modifier.padding(top=3.dp))
-       }
-       IconButton(onClick={presenting=false;presentingHymn=null}){Text("✕",fontSize=22.sp,color=Color.White)}
-      }
-      Spacer(Modifier.height(12.dp))
-      Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.65f)))
       Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
-       Text("HYMN ${current.number}",fontSize=12.sp,fontWeight=FontWeight.SemiBold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=18.dp))
-       Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=10.dp,bottom=8.dp))
+       Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=18.dp,bottom=8.dp))
        if(current.source.isNotBlank()) Text(current.source,fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=gold.copy(alpha=.9f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(bottom=18.dp))
        if(current.verses.isNotEmpty()){
         current.verses.forEachIndexed { index, verse ->
