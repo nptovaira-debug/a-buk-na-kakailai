@@ -1,31 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Everyone may read only recordings that an administrator has approved.
-    match /recordings/{recordingId} {
-      allow read: if resource.data.status == "approved";
-      allow create, update, delete: if false;
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
     }
 
-    // Signed-in app users may submit links, but cannot read, edit, approve,
-    // or delete submissions. Approval is done by an administrator in Firebase.
+    match /admins/{adminUid} {
+      allow read: if request.auth != null && request.auth.uid == adminUid;
+      allow write: if false;
+    }
+
+    match /recordings/{recordingId} {
+      allow read: if resource.data.status == "approved";
+      allow create, update, delete: if isAdmin();
+    }
+
     match /recordingSubmissions/{submissionId} {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll([
-          "hymnNumber", "platform", "title", "url",
-          "status", "submittedBy", "createdAt"
+          "hymnNumber", "platform", "title", "url", "status", "submittedBy", "createdAt"
         ])
         && request.resource.data.keys().hasOnly([
-          "hymnNumber", "platform", "title", "url",
-          "status", "submittedBy", "createdAt"
+          "hymnNumber", "platform", "title", "url", "status", "submittedBy", "createdAt"
         ])
         && request.resource.data.hymnNumber is int
         && request.resource.data.hymnNumber > 0
         && request.resource.data.hymnNumber <= 10000
-        && request.resource.data.platform in [
-          "YouTube", "Spotify", "TikTok", "Facebook", "Other"
-        ]
+        && request.resource.data.platform in ["YouTube", "Spotify", "TikTok", "Facebook", "Other"]
         && request.resource.data.title is string
         && request.resource.data.title.size() <= 120
         && request.resource.data.url is string
@@ -35,7 +38,7 @@ service cloud.firestore {
         && request.resource.data.submittedBy == request.auth.uid
         && request.resource.data.createdAt == request.time;
 
-      allow read, update, delete: if false;
+      allow read, update, delete: if isAdmin();
     }
   }
 }
