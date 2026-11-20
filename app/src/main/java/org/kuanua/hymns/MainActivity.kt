@@ -942,11 +942,7 @@ private fun WelcomeScreen(onOpen: () -> Unit) {
      modifier = Modifier
       .fillMaxWidth()
       .background(Color(0x182B3540), MaterialTheme.shapes.large)
-      .then(
-       Modifier
-        .padding(1.dp)
-        .background(Color(0x102B3540), MaterialTheme.shapes.large)
-      )
+      .border(androidx.compose.foundation.BorderStroke(0.8.dp, gold.copy(alpha = 0.48f)), MaterialTheme.shapes.large)
       .padding(horizontal = 18.dp, vertical = 22.dp),
      horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
      verticalArrangement = Arrangement.spacedBy(13.dp)
