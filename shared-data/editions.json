@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "defaultEditionId": "kuanua-1960",
+  "editions": [
+    {
+      "id": "kuanua-1960",
+      "title": "A Buk na Kakailai (1960 Edition)",
+      "language": "Kuanua",
+      "dialect": "Blanche Bay",
+      "publicationYear": 1960,
+      "sourcePublication": "A Buk na Tinir, ma A Buk na Kakailai ure ra Lotu, ma A Lotu na Pupunang",
+      "hymnDataFile": "hymns.json",
+      "sectionDataFile": "sections.json",
+      "status": "active"
+    }
+  ]
+}
