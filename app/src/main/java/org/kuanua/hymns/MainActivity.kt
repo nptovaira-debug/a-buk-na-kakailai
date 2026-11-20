@@ -54,6 +54,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -416,7 +417,7 @@ class MainActivity:ComponentActivity(){
    val stage=Color(0xFF35101F)
    val stageCard=Color(0xFF4A1A2D)
    val gold=Color(0xFFE8C98A)
-   Box(Modifier.fillMaxSize().background(stage)){
+   Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xFF24101A),stage,Color(0xFF541D34))))){
     if(presentationHymns.isEmpty()){
      Column(Modifier.fillMaxSize().padding(28.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
       Text("♪",fontSize=42.sp,color=gold)
@@ -426,6 +427,7 @@ class MainActivity:ComponentActivity(){
      }
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
+     var presentationVerseIndex by remember(current.number) { mutableIntStateOf(0) }
      Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=14.dp)){
       Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
        Column {
@@ -441,15 +443,22 @@ class MainActivity:ComponentActivity(){
        Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=12.dp,bottom=8.dp))
        if(current.source.isNotBlank()) Text(current.source,fontSize=12.sp,color=Color.White.copy(alpha=.68f),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
        Spacer(Modifier.height(24.dp))
-       current.verses.forEach{v->
-        Surface(Modifier.fillMaxWidth().padding(bottom=14.dp),shape=MaterialTheme.shapes.large,color=stageCard){
-         Column(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=18.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
-          Text("VERSE ${v.number}",fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=2.sp,color=gold)
-          Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,lineHeight=((scale+6)*1.55f).coerceAtMost(54f).sp,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(top=12.dp))
+       if(current.verses.isNotEmpty()){
+        val verse=current.verses[presentationVerseIndex.coerceIn(0,current.verses.lastIndex)]
+        Surface(Modifier.fillMaxWidth().padding(vertical=10.dp),shape=MaterialTheme.shapes.extraLarge,color=stageCard,tonalElevation=8.dp){
+         Column(Modifier.fillMaxWidth().padding(horizontal=22.dp,vertical=28.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center){
+          Text("✦",fontSize=20.sp,color=gold)
+          Text("VERSE ${verse.number}",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=3.sp,color=gold,modifier=Modifier.padding(top=12.dp))
+          Text(verse.text,fontSize=(scale+7).coerceAtMost(38).sp,lineHeight=((scale+7)*1.55f).coerceAtMost(58f).sp,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(top=20.dp))
+          Text("✦",fontSize=20.sp,color=gold,modifier=Modifier.padding(top=18.dp))
          }
         }
-       }
-       if(current.verses.isEmpty()) Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,color=Color.White.copy(alpha=.8f),modifier=Modifier.padding(top=20.dp))
+        Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+         OutlinedButton(onClick={presentationVerseIndex=(presentationVerseIndex-1).coerceAtLeast(0)},enabled=presentationVerseIndex>0,colors=ButtonDefaults.outlinedButtonColors(contentColor=gold)){Text("‹")}
+         Text("  ${presentationVerseIndex+1} / ${current.verses.size}  ",fontSize=12.sp,color=Color.White.copy(alpha=.8f))
+         Button(onClick={presentationVerseIndex=(presentationVerseIndex+1).coerceAtMost(current.verses.lastIndex)},enabled=presentationVerseIndex<current.verses.lastIndex,colors=ButtonDefaults.buttonColors(containerColor=gold,contentColor=stage)){Text("Next verse  ›")}
+        }
+       }else Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,color=Color.White.copy(alpha=.8f),modifier=Modifier.padding(top=20.dp))
        Text("✦",fontSize=18.sp,color=gold,modifier=Modifier.padding(vertical=10.dp))
       }
       Box(Modifier.fillMaxWidth().height(1.dp).background(gold.copy(alpha=.4f)))
