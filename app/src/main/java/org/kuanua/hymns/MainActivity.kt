@@ -70,6 +70,26 @@ private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.nu
 
 private fun normalizeSearch(value:String):String = value.lowercase().filter { it.isLetterOrDigit() }
 
+private data class HymnRecording(val platform:String,val title:String,val url:String)
+
+private fun loadHymnRecordings(prefs:SharedPreferences,hymnNumber:Int):List<HymnRecording> {
+ return runCatching {
+  val array=org.json.JSONArray(prefs.getString("recordings_"+hymnNumber,"[]"))
+  (0 until array.length()).mapNotNull { index ->
+   val item=array.optJSONObject(index) ?: return@mapNotNull null
+   HymnRecording(item.optString("platform"),item.optString("title"),item.optString("url"))
+  }
+ }.getOrDefault(emptyList())
+}
+
+private fun saveHymnRecordings(prefs:SharedPreferences,hymnNumber:Int,items:List<HymnRecording>) {
+ val array=org.json.JSONArray()
+ items.forEach { item ->
+  array.put(JSONObject().put("platform",item.platform).put("title",item.title).put("url",item.url))
+ }
+ prefs.edit().putString("recordings_"+hymnNumber,array.toString()).apply()
+}
+
 private const val BACKUP_APP_ID = "org.kuanua.hymns"
 private const val BACKUP_FORMAT_VERSION = 1
 
@@ -232,6 +252,11 @@ class MainActivity:ComponentActivity(){
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
  var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentingHymn by remember{mutableStateOf<Hymn?>(null)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))}
  var headerVisible by remember { mutableStateOf(true) }
+ var showRecordingDialog by remember { mutableStateOf(false) }
+ var recordingTitle by remember { mutableStateOf("") }
+ var recordingUrl by remember { mutableStateOf("") }
+ var recordingPlatform by remember { mutableStateOf("YouTube") }
+ var recordingError by remember { mutableStateOf<String?>(null) }
  val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
  BackHandler(enabled = opened != null || presenting || presentingHymn != null) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
@@ -319,7 +344,25 @@ class MainActivity:ComponentActivity(){
     OutlinedButton(onClick={presentationIndex=0;presentingHymn=h},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text("▶ Present",maxLines=1)}
    }
    Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("Text size",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
+   val hymnRecordings=remember(h.number){mutableStateOf(loadHymnRecordings(prefs,h.number))}
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
+    Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
+    Text("Add a recording from YouTube, Spotify, TikTok, Facebook or another website.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    Button(onClick={recordingTitle="";recordingUrl="";recordingPlatform="YouTube";recordingError=null;showRecordingDialog=true},modifier=Modifier.fillMaxWidth()) { Text("+ Add a recording link") }
+    if(hymnRecordings.value.isEmpty()) Text("No recordings added yet.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    hymnRecordings.value.forEachIndexed { index, recording ->
+     Card(Modifier.fillMaxWidth().padding(vertical=3.dp)) {
+      Row(Modifier.fillMaxWidth().padding(10.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+       Column(Modifier.weight(1f)) {
+        Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
+        Text(recording.platform,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+       }
+       TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
+       TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
+      }
+     }
+    }
+    Text("Recording links are currently saved on this device. They can be included in an exported backup.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp))
     if(h.verses.isEmpty())Text("This hymn is not reproduced in the supplied source scan. No lyrics have been added.")
     h.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=10.dp));Text(v.text,fontSize=scale.sp,modifier=Modifier.padding(vertical=8.dp))}
     HorizontalDivider()
@@ -329,6 +372,45 @@ class MainActivity:ComponentActivity(){
     OutlinedTextField(note,{note=it;saved=false},Modifier.fillMaxWidth(),placeholder={Text("Add a personal note")},minLines=2)
     Button(onClick={prefs.edit().putString("note_"+h.number,note).apply();saved=true}){Text("Save note")}
     if(saved)Text("Note saved on this device.",style=MaterialTheme.typography.bodySmall)
+   }
+   if(showRecordingDialog) {
+    AlertDialog(
+     onDismissRequest={showRecordingDialog=false},
+     title={Text("Add hymn recording")},
+     text={
+      Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+       var platformMenu by remember { mutableStateOf(false) }
+       Box {
+        OutlinedButton(onClick={platformMenu=true},modifier=Modifier.fillMaxWidth()) { Text("Platform: "+recordingPlatform) }
+        DropdownMenu(expanded=platformMenu,onDismissRequest={platformMenu=false}) {
+         listOf("YouTube","Spotify","TikTok","Facebook","Other").forEach { platform ->
+          DropdownMenuItem(text={Text(platform)},onClick={recordingPlatform=platform;platformMenu=false})
+         }
+        }
+       }
+       OutlinedTextField(value=recordingTitle,onValueChange={recordingTitle=it},label={Text("Singer / choir / description (optional)")},singleLine=true)
+       OutlinedTextField(value=recordingUrl,onValueChange={recordingUrl=it},label={Text("Recording URL")},singleLine=true)
+       recordingError?.let { Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall) }
+      }
+     },
+     confirmButton={
+      TextButton(onClick={
+       val parsed=runCatching{android.net.Uri.parse(recordingUrl.trim())}.getOrNull()
+       if(parsed==null || parsed.scheme !in listOf("http","https") || parsed.host.isNullOrBlank()) {
+        recordingError="Enter a valid link beginning with https:// or http://."
+       } else if(hymnRecordings.value.any{it.url.equals(recordingUrl.trim(),ignoreCase=true)}) {
+        recordingError="This recording link has already been added."
+       } else {
+        val next=hymnRecordings.value+HymnRecording(recordingPlatform,recordingTitle.trim(),recordingUrl.trim())
+        hymnRecordings.value=next
+        saveHymnRecordings(prefs,h.number,next)
+        showRecordingDialog=false
+        Toast.makeText(context,"Recording link saved on this device",Toast.LENGTH_SHORT).show()
+       }
+      }) { Text("Save link") }
+     },
+     dismissButton={TextButton(onClick={showRecordingDialog=false}){Text("Cancel")}}
+    )
    }
   }else{
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
