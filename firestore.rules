@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Everyone may read only recordings that an administrator has approved.
+    match /recordings/{recordingId} {
+      allow read: if resource.data.status == "approved";
+      allow create, update, delete: if false;
+    }
+
+    // Signed-in app users may submit links, but cannot read, edit, approve,
+    // or delete submissions. Approval is done by an administrator in Firebase.
+    match /recordingSubmissions/{submissionId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll([
+          "hymnNumber", "platform", "title", "url",
+          "status", "submittedBy", "createdAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "hymnNumber", "platform", "title", "url",
+          "status", "submittedBy", "createdAt"
+        ])
+        && request.resource.data.hymnNumber is int
+        && request.resource.data.hymnNumber > 0
+        && request.resource.data.hymnNumber <= 10000
+        && request.resource.data.platform in [
+          "YouTube", "Spotify", "TikTok", "Facebook", "Other"
+        ]
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.url is string
+        && request.resource.data.url.size() <= 2048
+        && request.resource.data.url.matches("https?://.*")
+        && request.resource.data.status == "pending"
+        && request.resource.data.submittedBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+
+      allow read, update, delete: if false;
+    }
+  }
+}
