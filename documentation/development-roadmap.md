@@ -11,6 +11,8 @@ Build both a historical digital edition and a practical modern hymn app. Keep th
 - [x] Document the 1960 publication details and known missing scan pages / hymns.
 - [ ] Compare every hymn against the original scan and record verified corrections.
 - [ ] Add scan page references only when confirmed from the source.
+- [x] Establish a stable edition catalog with the 1960 collection as the default edition.
+- [ ] Add future editions as separate datasets with independent numbering, sections and source references.
 
 ## Phase 2 — Improve the web/PWA edition
 
@@ -50,4 +52,8 @@ Build both a historical digital edition and a practical modern hymn app. Keep th
 - Offline-first; core hymn reading must not require an account or internet connection.
 - Historical source text and editorial corrections remain distinguishable.
 - One shared dataset serves web and Android clients.
+- Every hymn collection has a stable edition ID; hymn numbers are unique only within an edition.
+- Favourites, playlists, notes, recordings and history must use the pair (edition ID, hymn number), never hymn number alone.
+- Preserve the 1960 transcription and its existing numbering; add new editions alongside it rather than merging or renumbering records.
+- Keep the current reader interface unchanged until multi-edition browsing is explicitly introduced.
 - No fabricated lyrics, musical notation, recordings, source page references or historical corrections.
