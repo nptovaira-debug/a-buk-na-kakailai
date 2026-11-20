@@ -253,7 +253,6 @@ class MainActivity:ComponentActivity(){
   }
  }
  var showWelcome by remember{mutableStateOf(true)}
- LaunchedEffect(Unit){delay(5000);showWelcome=false}
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var sourceFilter by remember{mutableStateOf("All sources")};var sourceFilterExpanded by remember{mutableStateOf(false)};var opened by remember{mutableStateOf<Hymn?>(null)}
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
@@ -735,7 +734,7 @@ class MainActivity:ComponentActivity(){
   }
   }
  }
- if(showWelcome) WelcomeScreen()
+ if(showWelcome) WelcomeScreen(onOpen = { showWelcome = false })
  }}}
 }
 
@@ -835,113 +834,164 @@ private fun NativeAdCard() {
 
 
 @Composable
-private fun WelcomeScreen() {
- val gold = Color(0xFFD6B875)
- val ivory = Color(0xFFFFF8F0)
+private fun WelcomeScreen(onOpen: () -> Unit) {
+ val gold = Color(0xFFD2B36F)
+ val ivory = Color(0xFFF3F0E9)
+ val muted = Color(0xFFB8B5B0)
+ val background = Color(0xFF151B23)
  Box(
-  modifier = Modifier.fillMaxSize(),
-  contentAlignment = androidx.compose.ui.Alignment.Center
+  modifier = Modifier
+   .fillMaxSize()
+   .background(
+    Brush.verticalGradient(
+     colors = listOf(Color(0xFF202832), background, Color(0xFF10151C))
+    )
+   )
  ) {
-  Image(
-   painter = painterResource(id = R.drawable.welcome_background),
-   contentDescription = "Church beside the bay with an open hymn book",
-   modifier = Modifier.fillMaxSize(),
-   contentScale = androidx.compose.ui.layout.ContentScale.Crop
+  Box(
+   Modifier.fillMaxSize().background(
+    Brush.radialGradient(
+     colors = listOf(Color(0x182F4558), Color.Transparent),
+     radius = 950f
+    )
+   )
   )
-  Box(Modifier.fillMaxSize().background(Color(0xCC10080D)))
   Column(
-   modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 28.dp, vertical = 24.dp),
+   modifier = Modifier
+    .fillMaxSize()
+    .verticalScroll(rememberScrollState())
+    .padding(horizontal = 28.dp, vertical = 30.dp),
    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-   verticalArrangement = Arrangement.spacedBy(16.dp)
+   verticalArrangement = Arrangement.SpaceBetween
   ) {
-   Box(
-    modifier = Modifier
-     .background(Color(0x553D1726), MaterialTheme.shapes.extraLarge)
-     .padding(horizontal = 16.dp, vertical = 8.dp)
-   ) {
-    Text(
-     "A TREASURE OF KUANUA HYMNS",
-     fontSize = 10.sp,
-     fontWeight = FontWeight.Bold,
-     letterSpacing = 2.sp,
-     color = gold
-    )
-   }
-   Text(
-    "A BUK NA\nKAKAILAI",
-    fontSize = 36.sp,
-    lineHeight = 42.sp,
-    fontFamily = FontFamily.Serif,
-    fontWeight = FontWeight.Bold,
-    color = ivory,
-    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-   )
-   Text(
-    "KUANUA HYMNS",
-    fontSize = 14.sp,
-    fontWeight = FontWeight.SemiBold,
-    letterSpacing = 4.sp,
-    color = gold
-   )
-   Spacer(Modifier.height(4.dp))
-   HorizontalDivider(
-    modifier = Modifier.fillMaxWidth(0.72f),
-    color = gold.copy(alpha = 0.8f),
-    thickness = 1.dp
-   )
-   Text(
-    "Welcome",
-    fontSize = 22.sp,
-    fontFamily = FontFamily.Serif,
-    fontWeight = FontWeight.SemiBold,
-    color = ivory
-   )
-   Text(
-    "A place to read, revisit and prepare the hymns that have accompanied generations in worship.",
-    fontSize = 16.sp,
-    lineHeight = 25.sp,
-    color = ivory.copy(alpha = 0.94f),
-    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-   )
-   Spacer(Modifier.height(6.dp))
    Column(
-    modifier = Modifier
-     .fillMaxWidth()
-     .background(Color(0x55301821), MaterialTheme.shapes.large)
-     .padding(horizontal = 18.dp, vertical = 16.dp),
+    modifier = Modifier.fillMaxWidth(),
     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.spacedBy(7.dp)
+    verticalArrangement = Arrangement.spacedBy(0.dp)
    ) {
+    Box(
+     modifier = Modifier
+      .background(Color(0xFF222A33), MaterialTheme.shapes.extraLarge)
+      .padding(horizontal = 18.dp, vertical = 9.dp)
+    ) {
+     Text(
+      "A TREASURE OF KUANUA HYMNS",
+      fontSize = 10.sp,
+      fontWeight = FontWeight.Medium,
+      letterSpacing = 1.5.sp,
+      color = gold
+     )
+    }
+    Spacer(Modifier.height(42.dp))
     Text(
-     "ROOTED IN A 1960 EDITION",
-     fontSize = 10.sp,
-     fontWeight = FontWeight.Bold,
-     letterSpacing = 1.6.sp,
-     color = gold
-    )
-    Text(
-     "A Buk na Tinir, ma A Buk na Kakailai ure ra Lotu, ma A Lotu na Pupunang",
-     fontSize = 14.sp,
-     lineHeight = 21.sp,
+     "A BUK NA\\nKAKAILAI",
+     fontSize = 39.sp,
+     lineHeight = 47.sp,
      fontFamily = FontFamily.Serif,
-     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+     fontWeight = FontWeight.SemiBold,
+     letterSpacing = 1.1.sp,
      color = ivory,
      textAlign = androidx.compose.ui.text.style.TextAlign.Center
     )
+    Spacer(Modifier.height(14.dp))
     Text(
-     "250 hymns  •  Blanche Bay Dialect",
+     "K U A N U A   H Y M N S",
      fontSize = 12.sp,
-     color = gold,
+     fontWeight = FontWeight.Medium,
+     color = gold
+    )
+    Spacer(Modifier.height(32.dp))
+    Row(
+     horizontalArrangement = Arrangement.spacedBy(5.dp),
+     verticalAlignment = androidx.compose.ui.Alignment.Bottom
+    ) {
+     listOf(30, 42, 54, 66, 58, 46, 34, 24).forEach { barHeight ->
+      Box(
+       Modifier
+        .width(5.dp)
+        .height(barHeight.dp)
+        .background(Color(0x267E8790), MaterialTheme.shapes.small)
+      )
+     }
+    }
+    Spacer(Modifier.height(28.dp))
+    HorizontalDivider(
+     modifier = Modifier.fillMaxWidth(0.82f),
+     color = gold.copy(alpha = 0.58f),
+     thickness = 0.8.dp
+    )
+    Spacer(Modifier.height(28.dp))
+    Text(
+     "Welcome",
+     fontSize = 27.sp,
+     fontFamily = FontFamily.Serif,
+     fontWeight = FontWeight.Medium,
+     color = ivory
+    )
+    Spacer(Modifier.height(12.dp))
+    Text(
+     "A place to read, revisit and prepare the hymns that have accompanied generations in worship.",
+     fontSize = 15.sp,
+     lineHeight = 24.sp,
+     fontWeight = FontWeight.Normal,
+     color = muted,
      textAlign = androidx.compose.ui.text.style.TextAlign.Center
     )
+    Spacer(Modifier.height(30.dp))
+    Column(
+     modifier = Modifier
+      .fillMaxWidth()
+      .background(Color(0x182B3540), MaterialTheme.shapes.large)
+      .then(
+       Modifier
+        .padding(1.dp)
+        .background(Color(0x102B3540), MaterialTheme.shapes.large)
+      )
+      .padding(horizontal = 18.dp, vertical = 22.dp),
+     horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+     verticalArrangement = Arrangement.spacedBy(13.dp)
+    ) {
+     Text(
+      "ROOTED IN A 1960 EDITION",
+      fontSize = 11.sp,
+      fontWeight = FontWeight.Medium,
+      letterSpacing = 1.4.sp,
+      color = gold
+     )
+     Text(
+      "A Buk na Tinir, ma A Buk na Kakailai ure ra Lotu, ma A Lotu na Pupunang",
+      fontSize = 15.sp,
+      lineHeight = 23.sp,
+      fontFamily = FontFamily.Serif,
+      fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+      color = ivory,
+      textAlign = androidx.compose.ui.text.style.TextAlign.Center
+     )
+     Text(
+      "250 hymns  •  Blanche Bay Dialect",
+      fontSize = 12.sp,
+      color = gold.copy(alpha = 0.92f),
+      textAlign = androidx.compose.ui.text.style.TextAlign.Center
+     )
+    }
    }
-   Text(
-    "READ  ·  REMEMBER  ·  WORSHIP",
-    fontSize = 10.sp,
-    fontWeight = FontWeight.SemiBold,
-    letterSpacing = 2.sp,
-    color = ivory.copy(alpha = 0.8f)
-   )
+   Button(
+    onClick = onOpen,
+    modifier = Modifier.fillMaxWidth().padding(top = 34.dp),
+    shape = MaterialTheme.shapes.extraLarge,
+    colors = ButtonDefaults.buttonColors(
+     containerColor = gold,
+     contentColor = Color(0xFF191A1C)
+    ),
+    contentPadding = PaddingValues(vertical = 17.dp)
+   ) {
+    Text(
+     "Open Hymnal",
+     fontSize = 18.sp,
+     fontWeight = FontWeight.SemiBold,
+     letterSpacing = 0.1.sp
+    )
+   }
   }
  }
 }
