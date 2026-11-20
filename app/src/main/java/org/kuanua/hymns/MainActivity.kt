@@ -25,6 +25,14 @@ import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -220,7 +228,10 @@ class MainActivity:ComponentActivity(){
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
- var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))}
+ var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentingHymn by remember{mutableStateOf<Hymn?>(null)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))}
+ var headerVisible by remember { mutableStateOf(true) }
+ val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset { if (available.y < -1f) headerVisible = false else if (available.y > 1f) headerVisible = true; return Offset.Zero } } }
+ BackHandler(enabled = opened != null || presenting || presentingHymn != null) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
@@ -268,67 +279,45 @@ class MainActivity:ComponentActivity(){
   surfaceVariant=Color(0xFF29272B),onSurfaceVariant=Color(0xFFD0C6C7),
   outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding()){Column(Modifier.fillMaxSize().padding(16.dp)){
-  Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
-   Row(
-    Modifier.fillMaxWidth().padding(horizontal=12.dp,vertical=10.dp),
-    horizontalArrangement=Arrangement.SpaceBetween,
-    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
-   ){
-    Row(Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(9.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
-     Text("▤",fontSize=22.sp,color=MaterialTheme.colorScheme.onPrimary)
-     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)){
-      Text("A BUK NA KAKAILAI",fontSize=17.sp,lineHeight=20.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary)
-      Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=10.sp,lineHeight=13.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f))
-     }
-    }
-    Column(horizontalAlignment=androidx.compose.ui.Alignment.End,verticalArrangement=Arrangement.Center) {
-     TextButton(
-      onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},
-      contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)
-     ){Text(if(darkMode)"☀ Light" else "☾ Dark",fontSize=12.sp,color=MaterialTheme.colorScheme.onPrimary)}
-     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)}
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp)){
+  if (!presenting && presentingHymn == null) AnimatedVisibility(visible=headerVisible,enter=slideInVertically { -it },exit=slideOutVertically { -it }) {
+   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
+    Column(Modifier.fillMaxWidth().padding(horizontal=14.dp,vertical=12.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(2.dp)){
+     Text("A BUK NA KAKAILAI",fontSize=19.sp,lineHeight=23.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.onPrimary,textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+     Text("Kuanua Hymns · Blanche Bay Dialect · 1960 source",fontSize=11.sp,lineHeight=14.sp,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.82f),textAlign=androidx.compose.ui.text.style.TextAlign.Center)
+     Row(horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){ TextButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)){Text(if(darkMode)"☀ Light" else "☾ Dark",fontSize=12.sp,color=MaterialTheme.colorScheme.onPrimary)}; if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){Text("Privacy choices",color=MaterialTheme.colorScheme.onPrimary,style=MaterialTheme.typography.labelSmall)} }
     }
    }
   }
-  if(presenting){
+  if(presenting || presentingHymn != null){
+   val presentationHymns=if(presentingHymn != null) listOf(presentingHymn!!) else playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
    val presentationHymns=playlist.mapNotNull{id->hymns.find{it.number.toString()==id}}
-   TextButton(onClick={presenting=false}){Text("← Exit presentation")}
+   TextButton(onClick={presenting=false;presentingHymn=null}){Text("✕ Exit full screen")}
    if(presentationHymns.isEmpty()){Text("Add hymns to your Service list before starting presentation.")}else{
     val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
-    Text("WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium)
-    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.Center){
+    Text(if(presentingHymn != null) "HYMN PRESENTATION" else "WORSHIP SERVICE · ${presentationIndex+1} OF ${presentationHymns.size}",style=MaterialTheme.typography.labelMedium,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
+    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=24.dp,vertical=12.dp),verticalArrangement=Arrangement.Center){
      Text(current.number.toString()+". "+displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold)
      if(current.verses.isEmpty())Text("Lyrics are not available in the supplied source scan.",fontSize=scale.sp,modifier=Modifier.padding(top=20.dp))
      current.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=18.dp));Text(v.text,fontSize=(scale+6).coerceAtMost(36).sp,modifier=Modifier.padding(vertical=10.dp))}
     }
-    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
-     OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}
-     Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}
+    Row(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=12.dp),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+     if(presentingHymn == null) OutlinedButton(onClick={presentationIndex=(presentationIndex-1).coerceAtLeast(0)},enabled=presentationIndex>0){Text("Previous")}
+     Row(horizontalArrangement=Arrangement.spacedBy(4.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale+6} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
+     if(presentingHymn == null) Button(onClick={presentationIndex=(presentationIndex+1).coerceAtMost(presentationHymns.lastIndex)},enabled=presentationIndex<presentationHymns.lastIndex){Text("Next hymn")}
     }
    }
   }else if(opened!=null){
    val h=opened!!
-   TextButton(onClick={opened=null}){Text("← Back")}
    Text(h.number.toString()+". "+displayHymnTitle(h),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.labelSmall)
-   Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){
-    OutlinedButton(onClick={favourite(h.number)}){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite")}
-    OutlinedButton(onClick={addToService(h.number)}){Text(if(playlist.contains(h.number.toString()))"✓ In service" else "+ Service")}
-    TextButton(onClick={
-     val hymnText = h.number.toString()+". "+displayHymnTitle(h)+"\n\n"+h.verses.joinToString("\n\n"){v->"Verse "+v.number+"\n"+v.text}
-     val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
-     clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText))
-     Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()
-    }){Text("Copy")}
-    TextButton(onClick={
-     val hymnText = h.number.toString()+". "+displayHymnTitle(h)+"\n\n"+h.verses.joinToString("\n\n"){v->"Verse "+v.number+"\n"+v.text}
-     val send = Intent(Intent.ACTION_SEND).apply{type="text/plain";putExtra(Intent.EXTRA_SUBJECT,"Hymn "+h.number+" – "+displayHymnTitle(h));putExtra(Intent.EXTRA_TEXT,hymnText)}
-     context.startActivity(Intent.createChooser(send,"Share hymn"))
-    }){Text("Share")}
-    TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")}
-    TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+    OutlinedButton(onClick={favourite(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite",maxLines=1)}
+    OutlinedButton(onClick={addToService(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(playlist.contains(h.number.toString()))"✓ Service" else "+ Service",maxLines=1)}
+    TextButton(onClick={val hymnText=h.number.toString()+". "+displayHymnTitle(h)+"\\n\\n"+h.verses.joinToString("\\n\\n"){v->"Verse "+v.number+"\\n"+v.text};val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager;clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText));Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()},modifier=Modifier.weight(.7f),contentPadding=PaddingValues(horizontal=2.dp,vertical=8.dp)){Text("Copy")}
+    OutlinedButton(onClick={presentationIndex=0;presentingHymn=h},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text("▶ Present",maxLines=1)}
    }
+   Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("Text size",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
     if(h.verses.isEmpty())Text("This hymn is not reproduced in the supplied source scan. No lyrics have been added.")
     h.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=10.dp));Text(v.text,fontSize=scale.sp,modifier=Modifier.padding(vertical=8.dp))}
@@ -396,6 +385,8 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    if(tab!="Service") AdMobBanner(adsAllowed)
   }
+  if (!presenting && presentingHymn == null) {
+  Spacer(Modifier.height(4.dp))
   HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant, thickness=0.7.dp)
   Row(
    Modifier.fillMaxWidth().padding(top=2.dp),
@@ -419,6 +410,7 @@ class MainActivity:ComponentActivity(){
   }
   backupMessage?.let { message ->
    Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
+  }
   }
  }
  if(showWelcome) WelcomeScreen()
