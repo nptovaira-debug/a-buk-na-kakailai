@@ -326,20 +326,20 @@ class MainActivity:ComponentActivity(){
   Font(R.font.plus_jakarta_sans, FontWeight.W800)
  )
  val modernTypography = Typography().copy(
-  displayLarge = Typography().displayLarge.copy(fontFamily = jakartaFamily, letterSpacing = (-1.2).sp),
-  displayMedium = Typography().displayMedium.copy(fontFamily = jakartaFamily, letterSpacing = (-0.8).sp),
-  headlineLarge = Typography().headlineLarge.copy(fontFamily = jakartaFamily, letterSpacing = (-0.5).sp),
-  headlineMedium = Typography().headlineMedium.copy(fontFamily = jakartaFamily, letterSpacing = (-0.35).sp),
-  headlineSmall = Typography().headlineSmall.copy(fontFamily = jakartaFamily, letterSpacing = (-0.2).sp),
-  titleLarge = Typography().titleLarge.copy(fontFamily = jakartaFamily, letterSpacing = (-0.2).sp),
-  titleMedium = Typography().titleMedium.copy(fontFamily = jakartaFamily),
-  titleSmall = Typography().titleSmall.copy(fontFamily = jakartaFamily),
-  bodyLarge = Typography().bodyLarge.copy(fontFamily = jakartaFamily, lineHeight = 27.sp),
-  bodyMedium = Typography().bodyMedium.copy(fontFamily = jakartaFamily, lineHeight = 24.sp),
-  bodySmall = Typography().bodySmall.copy(fontFamily = jakartaFamily),
-  labelLarge = Typography().labelLarge.copy(fontFamily = jakartaFamily),
-  labelMedium = Typography().labelMedium.copy(fontFamily = jakartaFamily),
-  labelSmall = Typography().labelSmall.copy(fontFamily = jakartaFamily)
+  displayLarge = Typography().displayLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-1.2).sp),
+  displayMedium = Typography().displayMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.8).sp),
+  headlineLarge = Typography().headlineLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.5).sp),
+  headlineMedium = Typography().headlineMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.35).sp),
+  headlineSmall = Typography().headlineSmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp),
+  titleLarge = Typography().titleLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp),
+  titleMedium = Typography().titleMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  titleSmall = Typography().titleSmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  bodyLarge = Typography().bodyLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, lineHeight = 27.sp),
+  bodyMedium = Typography().bodyMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, lineHeight = 24.sp),
+  bodySmall = Typography().bodySmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  labelLarge = Typography().labelLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  labelMedium = Typography().labelMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  labelSmall = Typography().labelSmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold)
  )
  val maroon=Color(0xFF681F36)
  val gold=Color(0xFFB99456)
