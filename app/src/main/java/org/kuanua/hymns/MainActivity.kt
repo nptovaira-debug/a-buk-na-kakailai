@@ -291,12 +291,6 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-   TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")}) { Text("Privacy Policy",style=MaterialTheme.typography.labelSmall) }
-   Spacer(Modifier.weight(1f))
-   TextButton(onClick={exportBackup.launch("A_Buk_na_Kakailai_Backup.json")}) { Text("Export backup",style=MaterialTheme.typography.labelSmall) }
-   TextButton(onClick={importBackup.launch(arrayOf("application/json","text/*"))}) { Text("Restore",style=MaterialTheme.typography.labelSmall) }
-  }
   backupMessage?.let { message ->
    Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
   }
@@ -404,6 +398,30 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    if(tab!="Service") AdMobBanner(adsAllowed)
+  }
+  HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant, thickness=0.7.dp)
+  Row(
+   Modifier.fillMaxWidth().padding(top=2.dp),
+   horizontalArrangement=Arrangement.Center,
+   verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+  ) {
+   TextButton(
+    onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},
+    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
+   ) { Text("Privacy Policy",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+   Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+   TextButton(
+    onClick={exportBackup.launch("A_Buk_na_Kakailai_Backup.json")},
+    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
+   ) { Text("Export backup",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+   Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+   TextButton(
+    onClick={importBackup.launch(arrayOf("application/json","text/*"))},
+    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
+   ) { Text("Restore",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+  }
+  backupMessage?.let { message ->
+   Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
   }
  }
  if(showWelcome) WelcomeScreen()
