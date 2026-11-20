@@ -68,6 +68,8 @@ private data class Section(val id:String,val title:String)
 
 private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.number}\\.\\s*"), "").ifBlank { "Hymn ${h.number}" }
 
+private fun normalizeSearch(value:String):String = value.lowercase().filter { it.isLetterOrDigit() }
+
 private const val BACKUP_APP_ID = "org.kuanua.hymns"
 private const val BACKUP_FORMAT_VERSION = 1
 
@@ -224,7 +226,7 @@ class MainActivity:ComponentActivity(){
  }
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(Unit){delay(5000);showWelcome=false}
- var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var opened by remember{mutableStateOf<Hymn?>(null)}
+ var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var sourceFilter by remember{mutableStateOf("All sources")};var sourceFilterExpanded by remember{mutableStateOf(false)};var opened by remember{mutableStateOf<Hymn?>(null)}
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
@@ -330,12 +332,22 @@ class MainActivity:ComponentActivity(){
    }
   }else{
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t)})}}
-   if(tab!="Service")OutlinedTextField(query,{query=it},Modifier.fillMaxWidth(),label={Text("Search number, title or lyrics")},singleLine=true)
+   if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+    OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
+    Box {
+     OutlinedButton(onClick={sourceFilterExpanded=true},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Filter")}
+     DropdownMenu(expanded=sourceFilterExpanded,onDismissRequest={sourceFilterExpanded=false}){
+      listOf("All sources","Has reference","M.H.B.","Other references").forEach { option ->
+       DropdownMenuItem(text={Text(option)},onClick={sourceFilter=option;sourceFilterExpanded=false})
+      }
+     }
+    }
+   }
    if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     FilterChip(
      selected=section==null,
      onClick={section=null},
-     label={Text("All sections")},
+     label={Text("ALL SECTIONS")},
      colors=FilterChipDefaults.filterChipColors(
       selectedContainerColor=MaterialTheme.colorScheme.primary,
       selectedLabelColor=MaterialTheme.colorScheme.onPrimary
@@ -354,7 +366,22 @@ class MainActivity:ComponentActivity(){
     }
    }
    val base=when(tab){"Favourites"->hymns.filter{favs.contains(it.number.toString())};"Recent"->recent.mapNotNull{id->hymns.find{it.number.toString()==id}};"Service"->playlist.mapNotNull{id->hymns.find{it.number.toString()==id}};else->hymns}
-   val shown=if(tab=="Service")base else base.filter{(tab!="All"||section==null||it.sectionId==section)&&(query.isBlank()||it.number.toString().contains(query.trim())||it.title.contains(query,true)||it.verses.any{v->v.text.contains(query,true)})}
+   val normalizedQuery=normalizeSearch(query)
+   val shown=if(tab=="Service")base else base.filter { hymn ->
+    val source=normalizeSearch(hymn.source)
+    val matchesQuery=query.isBlank() ||
+     normalizeSearch(hymn.number.toString()).contains(normalizedQuery) ||
+     normalizeSearch(hymn.title).contains(normalizedQuery) ||
+     source.contains(normalizedQuery) ||
+     hymn.verses.any { verse -> normalizeSearch(verse.text).contains(normalizedQuery) }
+    val matchesSource=when(sourceFilter){
+     "Has reference" -> hymn.source.isNotBlank()
+     "M.H.B." -> source.contains("mhb")
+     "Other references" -> hymn.source.isNotBlank() && !source.contains("mhb")
+     else -> true
+    }
+    (tab!="All"||section==null||hymn.sectionId==section) && matchesQuery && matchesSource
+   }
    if(tab=="Service"){
     Text("Service order · ${playlist.size} hymns",style=MaterialTheme.typography.labelMedium)
     Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Present worship service")}
