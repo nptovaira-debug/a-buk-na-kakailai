@@ -254,6 +254,7 @@ class MainActivity:ComponentActivity(){
   }
  }
  var showWelcome by remember{mutableStateOf(true)}
+ LaunchedEffect(showWelcome) { if (showWelcome) { delay(5_000); showWelcome = false } }
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var sourceFilter by remember{mutableStateOf("All sources")};var sourceFilterExpanded by remember{mutableStateOf(false)};var opened by remember{mutableStateOf<Hymn?>(null)}
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
@@ -730,7 +731,7 @@ class MainActivity:ComponentActivity(){
   }
   }
  }
- if(showWelcome) WelcomeScreen(onOpen = { showWelcome = false })
+ if(showWelcome) WelcomeScreen(darkMode = darkMode)
  }}}
 }
 
@@ -830,24 +831,25 @@ private fun NativeAdCard() {
 
 
 @Composable
-private fun WelcomeScreen(onOpen: () -> Unit) {
- val gold = Color(0xFFD2B36F)
- val ivory = Color(0xFFF3F0E9)
- val muted = Color(0xFFB8B5B0)
- val background = Color(0xFF151B23)
+private fun WelcomeScreen(darkMode: Boolean) {
+ val gold = if (darkMode) Color(0xFFD6B875) else Color(0xFFB99456)
+ val ivory = if (darkMode) Color(0xFFF1ECE8) else Color(0xFFF7F4F0)
+ val muted = if (darkMode) Color(0xFFD0C6C7) else Color(0xFF62585D)
+ val background = if (darkMode) Color(0xFF111214) else Color(0xFF681F36)
+ val panel = if (darkMode) Color(0xFF1A1B1E) else Color(0xFF572437)
  Box(
   modifier = Modifier
    .fillMaxSize()
    .background(
     Brush.verticalGradient(
-     colors = listOf(Color(0xFF202832), background, Color(0xFF10151C))
+     colors = listOf(if (darkMode) Color(0xFF29272B) else Color(0xFF7A2B45), background, if (darkMode) Color(0xFF111214) else Color(0xFF4D172A))
     )
    )
  ) {
   Box(
    Modifier.fillMaxSize().background(
     Brush.radialGradient(
-     colors = listOf(Color(0x182F4558), Color.Transparent),
+     colors = listOf(gold.copy(alpha = 0.10f), Color.Transparent),
      radius = 950f
     )
    )
@@ -858,7 +860,7 @@ private fun WelcomeScreen(onOpen: () -> Unit) {
     .verticalScroll(rememberScrollState())
     .padding(horizontal = 28.dp, vertical = 30.dp),
    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-   verticalArrangement = Arrangement.SpaceBetween
+   verticalArrangement = Arrangement.Center
   ) {
    Column(
     modifier = Modifier.fillMaxWidth(),
@@ -867,7 +869,7 @@ private fun WelcomeScreen(onOpen: () -> Unit) {
    ) {
     Box(
      modifier = Modifier
-      .background(Color(0xFF222A33), MaterialTheme.shapes.extraLarge)
+      .background(panel, MaterialTheme.shapes.extraLarge)
       .padding(horizontal = 18.dp, vertical = 9.dp)
     ) {
      Text(
@@ -906,7 +908,7 @@ private fun WelcomeScreen(onOpen: () -> Unit) {
        Modifier
         .width(5.dp)
         .height(barHeight.dp)
-        .background(Color(0x267E8790), MaterialTheme.shapes.small)
+        .background(gold.copy(alpha = 0.18f), MaterialTheme.shapes.small)
       )
      }
     }
@@ -937,7 +939,7 @@ private fun WelcomeScreen(onOpen: () -> Unit) {
     Column(
      modifier = Modifier
       .fillMaxWidth()
-      .background(Color(0x182B3540), MaterialTheme.shapes.large)
+      .background(panel.copy(alpha = 0.72f), MaterialTheme.shapes.large)
       .border(androidx.compose.foundation.BorderStroke(0.8.dp, gold.copy(alpha = 0.48f)), MaterialTheme.shapes.large)
       .padding(horizontal = 18.dp, vertical = 22.dp),
      horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
