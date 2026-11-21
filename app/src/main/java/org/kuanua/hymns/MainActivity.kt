@@ -272,6 +272,7 @@ class MainActivity:ComponentActivity(){
  var adminUid by remember { mutableStateOf<String?>(null) }
  var isAdmin by remember { mutableStateOf(false) }
  var showAdminPanel by remember { mutableStateOf(false) }
+ var showAdminSetupDialog by remember { mutableStateOf(false) }
  var pendingSubmissions by remember { mutableStateOf<List<com.google.firebase.firestore.DocumentSnapshot>>(emptyList()) }
  var adminMessage by remember { mutableStateOf<String?>(null) }
  var adminLoading by remember { mutableStateOf(false) }
@@ -280,9 +281,20 @@ class MainActivity:ComponentActivity(){
    .addOnSuccessListener { result ->
     val uid = result.user?.uid ?: return@addOnSuccessListener
     adminUid = uid
-    FirebaseFirestore.getInstance().collection("admins").document(uid).get()
-     .addOnSuccessListener { isAdmin = it.getBoolean("enabled") == true }
+
    }
+ }
+ val adminDocumentListener = remember(adminUid) {
+  adminUid?.let { uid ->
+   FirebaseFirestore.getInstance().collection("admins").document(uid)
+    .addSnapshotListener { snapshot, _ ->
+     isAdmin = snapshot?.getBoolean("enabled") == true
+     if (!isAdmin) showAdminPanel = false
+    }
+  }
+ }
+ DisposableEffect(adminDocumentListener) {
+  onDispose { adminDocumentListener?.remove() }
  }
  fun loadPendingSubmissions() {
   adminLoading = true
@@ -312,7 +324,7 @@ class MainActivity:ComponentActivity(){
    .addOnFailureListener { adminMessage = "Review action failed. Please try again." }
  }
  val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset { if (consumed.y < -6f) headerVisible = false else if (consumed.y > 6f) headerVisible = true; return Offset.Zero } } }
- BackHandler(enabled = opened != null || presenting || presentingHymn != null || showAdminPanel) { when { presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; showAdminPanel -> showAdminPanel = false; opened != null -> opened = null } }
+ BackHandler(enabled = opened != null || presenting || presentingHymn != null || showAdminPanel || showAdminSetupDialog) { when { showAdminSetupDialog -> showAdminSetupDialog = false; presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; showAdminPanel -> showAdminPanel = false; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
  fun addToService(n:Int){if(!playlist.contains(n.toString())){playlist=playlist+n.toString();prefs.edit().putString("service_playlist",playlist.joinToString(",")).apply()}}
@@ -389,7 +401,7 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
-  if(showAdminPanel){
+  if(showAdminPanel && isAdmin){
    Text("COMMUNITY RECORDING REVIEW",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    Text("Administrator access · ${adminUid ?: "Not signed in"}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
@@ -685,20 +697,26 @@ class MainActivity:ComponentActivity(){
    Spacer(Modifier.height(2.dp))
    HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
    Row(
-    Modifier.fillMaxWidth().height(24.dp),
+    Modifier.fillMaxWidth().height(28.dp),
     horizontalArrangement=Arrangement.Center,
     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
    ) {
-    TextButton(
-     onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},
-     modifier=Modifier.height(24.dp),
-     contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)
-    ) {
-     Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+    TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
   }
  }
+ if(showAdminSetupDialog) AlertDialog(
+  onDismissRequest={showAdminSetupDialog=false},
+  title={Text("Administrator setup")},
+  text={Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
+   Text("Copy your app sign-in ID, then add a document in Firestore under the admins collection using this exact ID.")
+   SelectionContainer { Text(adminUid ?: "Connecting to Firebase…",style=MaterialTheme.typography.bodySmall) }
+   Text("Add the field enabled with type Boolean and value true. Only do this for your trusted administrator account.",style=MaterialTheme.typography.bodySmall)
+  }},
+  confirmButton={TextButton(onClick={adminUid?.let { uid -> val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager; clipboard.setPrimaryClip(ClipData.newPlainText("Firebase admin UID",uid)); Toast.makeText(context,"Admin ID copied",Toast.LENGTH_SHORT).show() }},enabled=adminUid!=null){Text("Copy ID")}},
+  dismissButton={TextButton(onClick={showAdminSetupDialog=false}){Text("Close")}}
+ )
  if(showWelcome) WelcomeScreen(darkMode = darkMode)
  }}}
 }
