@@ -687,48 +687,21 @@ class MainActivity:ComponentActivity(){
    if(tab!="Service") AdMobBanner(adsAllowed)
   }
   if (!presenting && presentingHymn == null) {
-  Spacer(Modifier.height(4.dp))
-  HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant, thickness=0.7.dp)
-  Row(
-   Modifier.fillMaxWidth().padding(top=2.dp),
-   horizontalArrangement=Arrangement.Center,
-   verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
-  ) {
-   TextButton(
-    onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},
-    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
-   ) { Text("Privacy Policy",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-   Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
-   if(adminUid != null) {
-    TextButton(onClick={
-     val uid=adminUid ?: return@TextButton
-     val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
-     clipboard.setPrimaryClip(ClipData.newPlainText("Firebase user ID",uid))
-     Toast.makeText(context,"Device ID copied",Toast.LENGTH_SHORT).show()
-    },contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Copy device ID",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-    Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
-    if(isAdmin) TextButton(onClick={showAdminPanel=true;loadPendingSubmissions()},contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Review recordings",fontSize=10.sp)}
-    else TextButton(onClick={
-     val uid=adminUid
-     if(uid != null) FirebaseFirestore.getInstance().collection("admins").document(uid).get()
-      .addOnSuccessListener { isAdmin=it.getBoolean("enabled")==true; Toast.makeText(context,if(isAdmin)"Administrator access enabled" else "Administrator access not yet enabled",Toast.LENGTH_SHORT).show() }
-      .addOnFailureListener { Toast.makeText(context,"Could not check administrator access",Toast.LENGTH_SHORT).show() }
-    },contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)){Text("Check admin",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)}
-    Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
+   Spacer(Modifier.height(2.dp))
+   HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
+   Row(
+    Modifier.fillMaxWidth().height(24.dp),
+    horizontalArrangement=Arrangement.Center,
+    verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+   ) {
+    TextButton(
+     onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},
+     modifier=Modifier.height(24.dp),
+     contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)
+    ) {
+     Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    }
    }
-   TextButton(
-    onClick={exportBackup.launch("A_Buk_na_Kakailai_Backup.json")},
-    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
-   ) { Text("Export backup",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-   Text("•",fontSize=10.sp,color=MaterialTheme.colorScheme.outline)
-   TextButton(
-    onClick={importBackup.launch(arrayOf("application/json","text/*"))},
-    contentPadding=PaddingValues(horizontal=5.dp,vertical=0.dp)
-   ) { Text("Restore",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-  }
-  backupMessage?.let { message ->
-   Text(message,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(horizontal=4.dp))
-  }
   }
  }
  if(showWelcome) WelcomeScreen(darkMode = darkMode)
