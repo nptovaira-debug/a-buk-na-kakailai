@@ -29,6 +29,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
@@ -366,7 +367,7 @@ class MainActivity:ComponentActivity(){
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
    enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
-   exit=slideOutVertically(animationSpec=tween(220)) { -it } + fadeOut(animationSpec=tween(180))
+   exit=slideOutVertically(animationSpec=tween(280)) { -it } + shrinkVertically(animationSpec=tween(280), shrinkTowards=androidx.compose.ui.Alignment.Top) + fadeOut(animationSpec=tween(220))
   ) {
    Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
     Row(
@@ -599,13 +600,7 @@ class MainActivity:ComponentActivity(){
     )
    }
   }else{
-   AnimatedVisibility(
-    visible=headerVisible,
-    enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
-    exit=slideOutVertically(animationSpec=tween(220)) { -it } + fadeOut(animationSpec=tween(180))
-   ) {
-    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
-   }
+   Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
    if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
     Box {
