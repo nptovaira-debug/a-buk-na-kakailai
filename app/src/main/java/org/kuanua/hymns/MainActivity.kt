@@ -969,23 +969,6 @@ private fun WelcomeScreen(darkMode: Boolean) {
      )
     }
    }
-   Button(
-    onClick = onOpen,
-    modifier = Modifier.fillMaxWidth().padding(top = 34.dp),
-    shape = MaterialTheme.shapes.extraLarge,
-    colors = ButtonDefaults.buttonColors(
-     containerColor = gold,
-     contentColor = Color(0xFF191A1C)
-    ),
-    contentPadding = PaddingValues(vertical = 17.dp)
-   ) {
-    Text(
-     "Open Hymnal",
-     fontSize = 18.sp,
-     fontWeight = FontWeight.SemiBold,
-     letterSpacing = 0.1.sp
-    )
-   }
   }
  }
 }
