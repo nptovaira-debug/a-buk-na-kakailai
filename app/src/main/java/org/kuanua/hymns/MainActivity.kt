@@ -882,7 +882,7 @@ private fun WelcomeScreen(darkMode: Boolean) {
     }
     Spacer(Modifier.height(42.dp))
     Text(
-     "A BUK NA\\nKAKAILAI",
+     "A BUK NA\nKAKAILAI",
      fontSize = 39.sp,
      lineHeight = 47.sp,
      fontFamily = FontFamily.Serif,
