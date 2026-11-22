@@ -695,8 +695,10 @@ class MainActivity:ComponentActivity(){
        DropdownMenuItem(text={Text(option)},onClick={sourceFilter=option;sourceFilterExpanded=false})
       }
      }
+     }
      OutlinedButton(onClick={query="";sourceFilter="All sources";section=null},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Clear")}
     }
+   }
    }
    if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     FilterChip(
