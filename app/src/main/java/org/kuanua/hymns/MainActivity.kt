@@ -640,9 +640,8 @@ class MainActivity:ComponentActivity(){
          Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
          Text(recording.platform+" · Approved",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if(recordingEmbedUrl(recording)==null) TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open externally") }
        }
-       RecordingEmbed(recording)
+       RecordingPlaybackControls(recording)
       }
      }
     }
