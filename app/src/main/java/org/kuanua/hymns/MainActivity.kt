@@ -758,14 +758,10 @@ class MainActivity:ComponentActivity(){
        }else if(favs.contains(h.number.toString()))Text("★")
       }
      }
-     if(index==5 && tab!="Service" && adsAllowed && BuildConfig.ADMOB_NATIVE_AD_UNIT_ID.isNotBlank()) {
-      NativeAdCard(adRefreshKey)
-     }
     }
    }
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
-   if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
    }
   }
  }
@@ -781,7 +777,7 @@ class MainActivity:ComponentActivity(){
     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
-   if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
+   if(tab!="Service" && opened==null && !showAdminPanel) AdMobBanner(adsAllowed, adRefreshKey)
   }
  }
  }
