@@ -418,6 +418,7 @@ class MainActivity:ComponentActivity(){
   outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
  MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp)){
+   Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
    enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
@@ -680,7 +681,7 @@ class MainActivity:ComponentActivity(){
     )
    }
   }
-  if(opened==null && !presenting && !showAdminPanel){
+  else if(opened==null && !presenting && presentingHymn==null && !showAdminPanel){
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
    if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
@@ -768,7 +769,7 @@ class MainActivity:ComponentActivity(){
   }
  }
  if (!presenting && presentingHymn == null) {
-  Box(Modifier.fillMaxSize(), contentAlignment=androidx.compose.ui.Alignment.BottomCenter) {
+  Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
     HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
     Row(
@@ -784,8 +785,8 @@ class MainActivity:ComponentActivity(){
     }
    }
   }
- }
- if(showAdminSetupDialog) AlertDialog(
+  }
+if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
   text={Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
