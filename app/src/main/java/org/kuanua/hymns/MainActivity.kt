@@ -299,7 +299,8 @@ class MainActivity:ComponentActivity(){
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
- var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentingHymn by remember{mutableStateOf<Hymn?>(null)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))}
+ var scale by remember{mutableIntStateOf(prefs.getInt("scale",18))};var presenting by remember{mutableStateOf(false)};var presentingHymn by remember{mutableStateOf<Hymn?>(null)};var presentationIndex by remember{mutableIntStateOf(0)};var darkMode by remember{mutableStateOf(prefs.getBoolean("dark_mode",false))};var showWelcome by remember { mutableStateOf(true) }
+ LaunchedEffect(showWelcome) { if (showWelcome) { delay(5000); showWelcome = false } }
  var headerVisible by remember { mutableStateOf(true) }
  var showRecordingDialog by remember { mutableStateOf(false) }
  var recordingTitle by remember { mutableStateOf("") }
@@ -783,7 +784,8 @@ class MainActivity:ComponentActivity(){
  }
 }
  }
-if(showAdminSetupDialog) AlertDialog(
+if(showWelcome) WelcomeScreen(darkMode)
+ if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
   text={Column(verticalArrangement=Arrangement.spacedBy(10.dp)) {
