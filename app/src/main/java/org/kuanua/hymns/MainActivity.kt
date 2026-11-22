@@ -93,6 +93,8 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
  val uri=runCatching { Uri.parse(recording.url.trim()) }.getOrNull() ?: return null
  val host=uri.host?.lowercase()?.removePrefix("www.") ?: return null
  val path=uri.path.orEmpty()
+ val extension=path.substringAfterLast('.',"").lowercase()
+ if(extension in setOf("mp3","m4a","aac","ogg","wav","oga","opus")) return recording.url.trim()
  return when(recording.platform.lowercase()) {
   "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube-nocookie.com/embed/"+id+"?playsinline=1&rel=0" }
   "spotify" -> { if(host!="open.spotify.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("track","album","playlist","episode","show")) return null; "https://open.spotify.com/embed/"+p[0]+"/"+p[1]+"?utm_source=generator" }
@@ -106,15 +108,25 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
 @Composable
 private fun RecordingEmbed(recording:HymnRecording) {
  val embedUrl=remember(recording.url,recording.platform) { recordingEmbedUrl(recording) }
- if(embedUrl==null) Text("This link cannot be embedded here. Use Open to view it.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(8.dp))
- else AndroidView(modifier=Modifier.fillMaxWidth().height(220.dp),factory={ context -> WebView(context).apply {
-  settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=true
-  settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
-  webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
-  val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
-  val html="<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
-  loadDataWithBaseURL("https://www.youtube-nocookie.com/",html,"text/html","UTF-8",null)
- }},update={view->if(view.tag!=embedUrl){view.tag=embedUrl;view.loadUrl(embedUrl)}})
+ if(embedUrl==null) {
+  Text("This link cannot be played inside the app. You can still open it externally.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(8.dp))
+ } else {
+  val isAudio=remember(embedUrl) { Uri.parse(embedUrl).path.orEmpty().substringAfterLast('.', "").lowercase() in setOf("mp3","m4a","aac","ogg","wav","oga","opus") }
+  AndroidView(modifier=Modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
+   settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=true
+   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
+   android.webkit.CookieManager.getInstance().setAcceptCookie(true)
+   android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
+   webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
+   val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
+   val html=if(isAudio) {
+    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:8px;background:#000;color:#fff}</style></head><body><audio controls preload=\"metadata\" style=\"width:100%\"><source src=\""+escaped+"\"></audio></body></html>"
+   } else {
+    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
+   }
+   loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+  }},update={view->if(view.tag!=embedUrl){view.tag=embedUrl;view.loadUrl(embedUrl)}})
+ }
 }
 
 private fun loadHymnRecordings(prefs:SharedPreferences,hymnNumber:Int):List<HymnRecording> {
@@ -574,7 +586,7 @@ class MainActivity:ComponentActivity(){
    }
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
     Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
-    Text("Add a recording from YouTube, Spotify, TikTok, Facebook or another website.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    Text("Add a YouTube, Spotify, TikTok, Facebook, Instagram or direct audio link (MP3, M4A, AAC, OGG or WAV). Supported links play here in the app.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     Button(onClick={recordingTitle="";recordingUrl="";recordingPlatform="YouTube";recordingError=null;showRecordingDialog=true},modifier=Modifier.fillMaxWidth()) { Text("+ Add a recording link") }
     if(hymnRecordings.value.isEmpty()) Text("No recordings added yet.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     hymnRecordings.value.forEachIndexed { index, recording ->
@@ -584,7 +596,7 @@ class MainActivity:ComponentActivity(){
         Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
         Text(recording.platform,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
        }
-       TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
+       if(recordingEmbedUrl(recording)==null) TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open externally") }
        TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
       }
       RecordingEmbed(recording)
@@ -599,7 +611,7 @@ class MainActivity:ComponentActivity(){
          Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
          Text(recording.platform+" · Approved",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
+        if(recordingEmbedUrl(recording)==null) TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open externally") }
        }
        RecordingEmbed(recording)
       }
