@@ -1,6 +1,5 @@
 package org.kuanua.hymns
 
-import androidx.compose.foundation.layout.align
 
 import android.content.SharedPreferences
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -768,9 +767,10 @@ class MainActivity:ComponentActivity(){
   }
  }
  if (!presenting && presentingHymn == null) {
-  Column(
-   Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth().background(MaterialTheme.colorScheme.background)
-  ) {
+  Box(Modifier.fillMaxSize()) {
+   Column(
+    Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth().background(MaterialTheme.colorScheme.background)
+   ) {
    HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
    Row(
     Modifier.fillMaxWidth().height(30.dp),
@@ -783,8 +783,9 @@ class MainActivity:ComponentActivity(){
     }
     TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
+    }
+   }
   }
- }
  if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
