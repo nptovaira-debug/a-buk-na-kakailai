@@ -109,7 +109,7 @@ private fun RecordingEmbed(recording:HymnRecording) {
  else AndroidView(modifier=Modifier.fillMaxWidth().height(220.dp),factory={ context -> WebView(context).apply {
   settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=true
   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
-  webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK)
+  webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
   val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
   val html="<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
   loadDataWithBaseURL("https://www.youtube-nocookie.com/",html,"text/html","UTF-8",null)
