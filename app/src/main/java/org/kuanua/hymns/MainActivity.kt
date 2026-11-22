@@ -768,6 +768,7 @@ class MainActivity:ComponentActivity(){
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
   }
  }
+ }
  if (!presenting && presentingHymn == null) {
   Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
     HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
