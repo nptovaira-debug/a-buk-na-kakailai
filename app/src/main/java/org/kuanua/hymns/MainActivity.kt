@@ -764,19 +764,22 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
   }
-  if (!presenting && presentingHymn == null) {
-   Spacer(Modifier.height(2.dp))
+ }
+ if (!presenting && presentingHymn == null) {
+  Column(
+   Modifier.align(androidx.compose.ui.Alignment.BottomCenter).fillMaxWidth().background(MaterialTheme.colorScheme.background)
+  ) {
    HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
    Row(
-    Modifier.fillMaxWidth().height(28.dp),
+    Modifier.fillMaxWidth().height(30.dp),
     horizontalArrangement=Arrangement.Center,
     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
    ) {
-    TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+    TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     if(privacyOptionsRequired) {
-     TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+     TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     }
-    TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+    TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
   }
  }
