@@ -465,7 +465,7 @@ class MainActivity:ComponentActivity(){
   large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
   extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 82.dp else 34.dp } else 0.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 58.dp else 8.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
@@ -814,6 +814,23 @@ class MainActivity:ComponentActivity(){
    }
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
+    item {
+     Column(
+      Modifier.fillMaxWidth().padding(top=12.dp,bottom=16.dp),
+      verticalArrangement=Arrangement.spacedBy(6.dp)
+     ) {
+      HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.55f),thickness=0.5.dp)
+      Row(
+       Modifier.fillMaxWidth().padding(top=4.dp),
+       horizontalArrangement=Arrangement.Center,
+       verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
+      ) {
+       TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+       if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+       TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+      }
+     }
+    }
    }
   }
  }
@@ -825,11 +842,6 @@ class MainActivity:ComponentActivity(){
   ) {
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
    HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.55f), thickness=0.5.dp)
-   Row(Modifier.fillMaxWidth().height(28.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-    TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-    if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-    TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-   }
   }
  }
  }
