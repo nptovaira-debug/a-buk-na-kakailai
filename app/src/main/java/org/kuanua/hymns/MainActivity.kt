@@ -9,6 +9,12 @@ import android.content.Intent
 import android.widget.Toast
 import android.os.Bundle
 import android.view.ViewGroup
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.net.Uri
+import java.net.URLEncoder
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.graphics.Typeface
@@ -81,6 +87,34 @@ private fun displayHymnTitle(h:Hymn):String = h.title.replace(Regex("^\\s*${h.nu
 private fun normalizeSearch(value:String):String = value.lowercase().filter { it.isLetterOrDigit() }
 
 private data class HymnRecording(val platform:String,val title:String,val url:String)
+
+private fun recordingEmbedUrl(recording:HymnRecording):String? {
+ val uri=runCatching { Uri.parse(recording.url.trim()) }.getOrNull() ?: return null
+ val host=uri.host?.lowercase()?.removePrefix("www.") ?: return null
+ val path=uri.path.orEmpty()
+ return when(recording.platform.lowercase()) {
+  "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube-nocookie.com/embed/"+id+"?playsinline=1&rel=0" }
+  "spotify" -> { if(host!="open.spotify.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("track","album","playlist","episode","show")) return null; "https://open.spotify.com/embed/"+p[0]+"/"+p[1]+"?utm_source=generator" }
+  "tiktok" -> { val id=Regex("/video/(\\d+)").find(path)?.groupValues?.get(1) ?: return null; "https://www.tiktok.com/embed/v2/"+id }
+  "facebook" -> { if(!(host=="facebook.com" || host=="fb.watch" || host.endsWith(".facebook.com"))) return null; "https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(recording.url,"UTF-8")+"&show_text=false" }
+  "instagram" -> { if(host!="instagram.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("p","reel","tv")) return null; "https://www.instagram.com/"+p[0]+"/"+p[1]+"/embed" }
+  else -> null
+ }
+}
+
+@Composable
+private fun RecordingEmbed(recording:HymnRecording) {
+ val embedUrl=remember(recording.url,recording.platform) { recordingEmbedUrl(recording) }
+ if(embedUrl==null) Text("This link cannot be embedded here. Use Open to view it.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(8.dp))
+ else AndroidView(modifier=Modifier.fillMaxWidth().height(220.dp),factory={ context -> WebView(context).apply {
+  settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=true
+  settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
+  webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK)
+  val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
+  val html="<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
+  loadDataWithBaseURL("https://www.youtube-nocookie.com/",html,"text/html","UTF-8",null)
+ }},update={view->if(view.tag!=embedUrl){view.tag=embedUrl;view.loadUrl(embedUrl)}})
+}
 
 private fun loadHymnRecordings(prefs:SharedPreferences,hymnNumber:Int):List<HymnRecording> {
  return runCatching {
@@ -521,6 +555,7 @@ class MainActivity:ComponentActivity(){
        TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
        TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
       }
+      RecordingEmbed(recording)
      }
     }
     if (sharedRecordings.isNotEmpty()) {
@@ -534,6 +569,7 @@ class MainActivity:ComponentActivity(){
         }
         TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open") }
        }
+       RecordingEmbed(recording)
       }
      }
     }
