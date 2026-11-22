@@ -648,7 +648,7 @@ class MainActivity:ComponentActivity(){
        Box {
         OutlinedButton(onClick={platformMenu=true},modifier=Modifier.fillMaxWidth()) { Text("Platform: "+recordingPlatform) }
         DropdownMenu(expanded=platformMenu,onDismissRequest={platformMenu=false}) {
-         listOf("YouTube","Spotify","TikTok","Facebook","Other").forEach { platform ->
+         listOf("YouTube","Spotify","TikTok","Facebook","Instagram","Other").forEach { platform ->
           DropdownMenuItem(text={Text(platform)},onClick={recordingPlatform=platform;platformMenu=false})
          }
         }
