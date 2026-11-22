@@ -434,11 +434,6 @@ class MainActivity:ComponentActivity(){
      IconButton(onClick={darkMode=!darkMode;prefs.edit().putBoolean("dark_mode",darkMode).apply()},modifier=Modifier.size(38.dp)){
       Text(if(darkMode)"☀" else "☾",fontSize=22.sp,color=MaterialTheme.colorScheme.onPrimary)
      }
-     if(privacyOptionsRequired) {
-      TextButton(onClick=onPrivacyOptionsClick,contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){
-       Text("Privacy",fontSize=10.sp,color=MaterialTheme.colorScheme.onPrimary)
-      }
-     }
     }
    }
   }
@@ -778,6 +773,9 @@ class MainActivity:ComponentActivity(){
     verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
    ) {
     TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+    if(privacyOptionsRequired) {
+     TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
     TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(26.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
   }
