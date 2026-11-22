@@ -4,6 +4,7 @@ on:
     branches: [ main, ui-polish-hymn-reading ]
     paths: [ 'app/**', '*.gradle.kts', 'gradle.properties', 'shared-data/**', 'scripts/**', '.github/workflows/android.yml' ]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths: [ 'app/**', '*.gradle.kts', 'gradle.properties', 'shared-data/**', '.github/workflows/android.yml' ]
   workflow_dispatch:
 jobs:
