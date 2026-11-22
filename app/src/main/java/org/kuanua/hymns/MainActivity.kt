@@ -289,8 +289,6 @@ class MainActivity:ComponentActivity(){
    }
   }
  }
- var showWelcome by remember{mutableStateOf(true)}
- LaunchedEffect(showWelcome) { if (showWelcome) { delay(5_000); showWelcome = false } }
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var sourceFilter by remember{mutableStateOf("All sources")};var sourceFilterExpanded by remember{mutableStateOf(false)};var opened by remember{mutableStateOf<Hymn?>(null)}
   var adRefreshKey by remember { mutableIntStateOf(0) }
   var wasInHymnDetail by remember { mutableStateOf(false) }
@@ -768,7 +766,6 @@ class MainActivity:ComponentActivity(){
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
   }
  }
- }
  if (!presenting && presentingHymn == null) {
   Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
     HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
@@ -785,6 +782,7 @@ class MainActivity:ComponentActivity(){
   }
  }
 }
+ }
 if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
@@ -796,7 +794,6 @@ if(showAdminSetupDialog) AlertDialog(
   confirmButton={TextButton(onClick={adminUid?.let { uid -> val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager; clipboard.setPrimaryClip(ClipData.newPlainText("Firebase admin UID",uid)); Toast.makeText(context,"Admin ID copied",Toast.LENGTH_SHORT).show() }},enabled=adminUid!=null){Text("Copy ID")}},
   dismissButton={TextButton(onClick={showAdminSetupDialog=false}){Text("Close")}}
  )
- if(showWelcome) WelcomeScreen(darkMode = darkMode)
  }}}
 
 
