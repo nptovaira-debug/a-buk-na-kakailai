@@ -770,7 +770,6 @@ class MainActivity:ComponentActivity(){
  }
  if (!presenting && presentingHymn == null) {
   Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
-   Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
     HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.65f), thickness=0.5.dp)
     Row(
      Modifier.fillMaxWidth().height(30.dp),
@@ -782,10 +781,9 @@ class MainActivity:ComponentActivity(){
       TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
      }
      TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
-   }
   }
-  }
+ }
+}
 if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
