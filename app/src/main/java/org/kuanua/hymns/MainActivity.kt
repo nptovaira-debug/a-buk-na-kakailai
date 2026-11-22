@@ -681,6 +681,7 @@ class MainActivity:ComponentActivity(){
    }
   }
   else if(opened==null && !presenting && presentingHymn==null && !showAdminPanel){
+   if (opened == null) {
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
    if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
@@ -765,6 +766,7 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
+   }
   }
  }
  if (!presenting && presentingHymn == null) {
