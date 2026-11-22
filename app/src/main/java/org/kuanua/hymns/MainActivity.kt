@@ -291,6 +291,12 @@ class MainActivity:ComponentActivity(){
  var showWelcome by remember{mutableStateOf(true)}
  LaunchedEffect(showWelcome) { if (showWelcome) { delay(5_000); showWelcome = false } }
  var query by remember{mutableStateOf("")};var section by remember{mutableStateOf<String?>(null)};var sourceFilter by remember{mutableStateOf("All sources")};var sourceFilterExpanded by remember{mutableStateOf(false)};var opened by remember{mutableStateOf<Hymn?>(null)}
+  var adRefreshKey by remember { mutableIntStateOf(0) }
+  var wasInHymnDetail by remember { mutableStateOf(false) }
+  LaunchedEffect(opened) {
+   if (opened != null) wasInHymnDetail = true
+   else if (wasInHymnDetail) { adRefreshKey++; wasInHymnDetail = false }
+  }
  var tab by remember{mutableStateOf("All")};var favs by remember{mutableStateOf(prefs.getStringSet("favs",emptySet())?.toSet()?:emptySet())}
  var recent by remember{mutableStateOf(prefs.getString("recent","").orEmpty().split(",").filter{it.isNotBlank()})}
  var playlist by remember{mutableStateOf(prefs.getString("service_playlist","").orEmpty().split(",").filter{it.isNotBlank()})}
@@ -681,13 +687,15 @@ class MainActivity:ComponentActivity(){
    Row(horizontalArrangement=Arrangement.spacedBy(4.dp)){listOf("All","Favourites","Recent","Service").forEach{t->FilterChip(selected=tab==t,onClick={tab=t},label={Text(t,fontWeight=FontWeight.SemiBold)})}}
    if(tab!="Service") Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
     OutlinedTextField(query,{query=it},Modifier.weight(1f),label={Text("Search title, lyrics or reference")},singleLine=true)
-    Box {
-     OutlinedButton(onClick={sourceFilterExpanded=true},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Filter")}
+    Row(horizontalArrangement=Arrangement.spacedBy(4.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+     Box {
+      OutlinedButton(onClick={sourceFilterExpanded=true},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Filter")}
      DropdownMenu(expanded=sourceFilterExpanded,onDismissRequest={sourceFilterExpanded=false}){
       listOf("All sources","Has reference","M.H.B.","Other references","1200.S.","S.M.","German Tune","888.S.","Gypsy Smith's Hymnal","Alexander H.B.","M.S.S.H.B.","Tune: March of the Men of Harlech","Children's Hosannas","L.M.","C.M.","A.S.","Tune: Banner Anniversary H.B.","L. Tonkin","M.B.B.","Heart and Voice","Music by Thomas Troman").forEach { option ->
        DropdownMenuItem(text={Text(option)},onClick={sourceFilter=option;sourceFilterExpanded=false})
       }
      }
+     OutlinedButton(onClick={query="";sourceFilter="All sources";section=null},contentPadding=PaddingValues(horizontal=10.dp,vertical=12.dp)){Text("Clear")}
     }
    }
    if(tab=="All")Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
@@ -789,7 +797,7 @@ class MainActivity:ComponentActivity(){
 
 
 @Composable
-private fun AdMobBanner(adsAllowed:Boolean) {
+private fun AdMobBanner(adsAllowed:Boolean, refreshKey:Int) {
  if(!adsAllowed || BuildConfig.ADMOB_BANNER_AD_UNIT_ID.isBlank()) return
  val context = LocalContext.current
  val adView = remember {
@@ -805,7 +813,7 @@ private fun AdMobBanner(adsAllowed:Boolean) {
 }
 
 @Composable
-private fun NativeAdCard() {
+private fun NativeAdCard(refreshKey:Int) {
  val context = LocalContext.current
  val adUnitId = BuildConfig.ADMOB_NATIVE_AD_UNIT_ID
  if(adUnitId.isBlank()) return
