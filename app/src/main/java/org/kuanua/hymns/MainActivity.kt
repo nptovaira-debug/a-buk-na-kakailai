@@ -112,13 +112,13 @@ private fun RecordingPlaybackControls(recording:HymnRecording) {
  var showPlayer by remember(recording.url) { mutableStateOf(false) }
  Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(4.dp)) {
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-   Button(onClick={showPlayer=!showPlayer},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=12.dp,vertical=8.dp)) {
+   Button(onClick={showPlayer=!showPlayer},modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
     Text(if(showPlayer) "Hide player" else "▶ Play")
    }
    OutlinedButton(onClick={
     runCatching { uriHandler.openUri(recording.url) }
      .onFailure { Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show() }
-   },modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=12.dp,vertical=8.dp)) {
+   },modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
     Text("Open link")
    }
   }
@@ -596,8 +596,8 @@ class MainActivity:ComponentActivity(){
    val h=opened!!
    Text(h.number.toString()+". "+displayHymnTitle(h),style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.labelSmall)
-   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
-    OutlinedButton(onClick={favourite(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite",maxLines=1)}
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
+    OutlinedButton(onClick={favourite(h.number)},modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=4.dp,vertical=0.dp)){Text(if(favs.contains(h.number.toString()))"★ Saved" else "☆ Favourite",maxLines=1)}
     OutlinedButton(onClick={addToService(h.number)},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text(if(playlist.contains(h.number.toString()))"✓ Service" else "+ Service",maxLines=1)}
     OutlinedButton(onClick={val hymnText=h.number.toString()+". "+displayHymnTitle(h)+System.lineSeparator()+System.lineSeparator()+h.verses.joinToString(System.lineSeparator()+System.lineSeparator()){v->"Verse "+v.number+System.lineSeparator()+v.text};val clipboard=context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager;clipboard.setPrimaryClip(ClipData.newPlainText("Hymn "+h.number,hymnText));Toast.makeText(context,"Hymn copied",Toast.LENGTH_SHORT).show()},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text("Copy",maxLines=1)}
     OutlinedButton(onClick={presentationIndex=0;presentingHymn=h},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=5.dp,vertical=8.dp)){Text("▶ Present",maxLines=1)}
