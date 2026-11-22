@@ -416,7 +416,7 @@ class MainActivity:ComponentActivity(){
   surfaceVariant=Color(0xFF29272B),onSurfaceVariant=Color(0xFFD0C6C7),
   outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (!presenting && presentingHymn == null) { if (tab != "Service") 92.dp else 34.dp } else 0.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 92.dp else 34.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
@@ -770,7 +770,7 @@ class MainActivity:ComponentActivity(){
    }
   }
  }
- if (!presenting && presentingHymn == null) {
+ if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) {
   Column(
    Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
     .fillMaxWidth()
@@ -782,7 +782,7 @@ class MainActivity:ComponentActivity(){
     if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
     TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(28.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=9.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
    }
-   if(tab!="Service" && opened==null && !showAdminPanel) AdMobBanner(adsAllowed, adRefreshKey)
+   if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
   }
  }
  }
