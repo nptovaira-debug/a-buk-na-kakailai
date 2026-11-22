@@ -745,17 +745,22 @@ class MainActivity:ComponentActivity(){
    }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
    LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)){
     itemsIndexed(shown,key={_,h->"hymn_${h.number}"}){index,h->
-     Card(Modifier.fillMaxWidth().clickable{open(h)}){
-      Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
-       Column(Modifier.weight(1f)){
-        Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold)
-        if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)
+     Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+      Card(Modifier.fillMaxWidth().clickable{open(h)}){
+       Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
+        Column(Modifier.weight(1f)){
+         Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold)
+         if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)
+        }
+        if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){
+         TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")}
+         TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")}
+         TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}
+        }else if(favs.contains(h.number.toString()))Text("★")
        }
-       if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){
-        TextButton(onClick={moveService(h.number.toString(),-1)}){Text("↑")}
-        TextButton(onClick={moveService(h.number.toString(),1)}){Text("↓")}
-        TextButton(onClick={removeFromService(h.number.toString())}){Text("Remove")}
-       }else if(favs.contains(h.number.toString()))Text("★")
+      }
+      if(index==4 && tab!="Service" && adsAllowed && BuildConfig.ADMOB_NATIVE_AD_UNIT_ID.isNotBlank()) {
+       NativeAdCard(adRefreshKey)
       }
      }
     }
