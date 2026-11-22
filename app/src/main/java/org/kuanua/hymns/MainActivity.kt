@@ -465,7 +465,7 @@ class MainActivity:ComponentActivity(){
   large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
   extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 58.dp else 8.dp } else 0.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 36.dp else 4.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
