@@ -13,7 +13,7 @@ val hasReleaseSigning = listOf(releaseKeystorePath, releaseStorePassword, releas
 android {
     namespace = "org.kuanua.hymns"
     compileSdk = 36
-    defaultConfig { applicationId = "org.kuanua.hymns"; minSdk = 26; targetSdk = 36; versionCode = 6; versionName = "1.0.4" }
+    defaultConfig { applicationId = "org.kuanua.hymns"; minSdk = 26; targetSdk = 36; versionCode = 7; versionName = "1.0.5" }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     signingConfigs {
