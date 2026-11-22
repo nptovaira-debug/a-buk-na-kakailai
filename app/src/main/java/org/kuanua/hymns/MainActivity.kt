@@ -795,7 +795,6 @@ class MainActivity:ComponentActivity(){
  )
  if(showWelcome) WelcomeScreen(darkMode = darkMode)
  }}}
-}
 
 
 @Composable
