@@ -303,6 +303,7 @@ class MainActivity:ComponentActivity(){
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
+ var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var adminUid by remember { mutableStateOf<String?>(null) }
  var isAdmin by remember { mutableStateOf(false) }
  var showAdminPanel by remember { mutableStateOf(false) }
@@ -475,6 +476,22 @@ class MainActivity:ComponentActivity(){
      }
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
+     LaunchedEffect(current.number) {
+      presentationSharedRecordings = emptyList()
+      FirebaseFirestore.getInstance().collection("recordings")
+       .whereEqualTo("hymnNumber", current.number)
+       .whereEqualTo("status", "approved")
+       .get()
+       .addOnSuccessListener { snapshot ->
+        presentationSharedRecordings = snapshot.documents.mapNotNull { doc ->
+         val platform = doc.getString("platform") ?: return@mapNotNull null
+         val url = doc.getString("url") ?: return@mapNotNull null
+         HymnRecording(platform, doc.getString("title").orEmpty(), url)
+        }
+       }
+     }
+     val presentationLocalRecordings = remember(current.number) { loadHymnRecordings(prefs,current.number) }
+
      Column(Modifier.fillMaxSize().padding(horizontal=20.dp, vertical=8.dp)){
       Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){
        IconButton(onClick={presenting=false;presentingHymn=null}){
@@ -484,7 +501,20 @@ class MainActivity:ComponentActivity(){
       Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
        Text(displayHymnTitle(current),style=MaterialTheme.typography.headlineMedium,fontWeight=FontWeight.Bold,color=Color.White,textAlign=androidx.compose.ui.text.style.TextAlign.Center,lineHeight=38.sp,modifier=Modifier.padding(top=18.dp,bottom=8.dp))
        if(current.source.isNotBlank()) Text(current.source,fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=gold.copy(alpha=.9f),textAlign=androidx.compose.ui.text.style.TextAlign.Center,modifier=Modifier.padding(bottom=18.dp))
-       if(current.verses.isNotEmpty()){
+       if(presentationLocalRecordings.isNotEmpty() || presentationSharedRecordings.isNotEmpty()){
+         Column(Modifier.fillMaxWidth().padding(bottom=14.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+          Text("LISTEN TO THIS HYMN",fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp,color=gold)
+          (presentationLocalRecordings + presentationSharedRecordings).forEach { recording ->
+           Surface(Modifier.fillMaxWidth(),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.95f)){
+            Column(Modifier.fillMaxWidth().padding(8.dp)){
+             Text(recording.title.ifBlank { recording.platform+" recording" },fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Color.White,modifier=Modifier.padding(bottom=5.dp))
+             RecordingEmbed(recording)
+            }
+           }
+          }
+         }
+        }
+        if(current.verses.isNotEmpty()){
         current.verses.forEachIndexed { index, verse ->
          Surface(Modifier.fillMaxWidth().padding(vertical=5.dp),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.88f)){
           Column(Modifier.fillMaxWidth().padding(horizontal=18.dp,vertical=14.dp),horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
