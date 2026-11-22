@@ -431,9 +431,9 @@ class MainActivity:ComponentActivity(){
   titleLarge = Typography().titleLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.2).sp),
   titleMedium = Typography().titleMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
   titleSmall = Typography().titleSmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
-  bodyLarge = Typography().bodyLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, lineHeight = 27.sp),
-  bodyMedium = Typography().bodyMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold, lineHeight = 24.sp),
-  bodySmall = Typography().bodySmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
+  bodyLarge = Typography().bodyLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.Medium, lineHeight = 26.sp),
+  bodyMedium = Typography().bodyMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.Normal, lineHeight = 22.sp),
+  bodySmall = Typography().bodySmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.Normal, lineHeight = 18.sp),
   labelLarge = Typography().labelLarge.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
   labelMedium = Typography().labelMedium.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold),
   labelSmall = Typography().labelSmall.copy(fontFamily = jakartaFamily, fontWeight = FontWeight.SemiBold)
@@ -458,7 +458,14 @@ class MainActivity:ComponentActivity(){
   surfaceVariant=Color(0xFF29272B),onSurfaceVariant=Color(0xFFD0C6C7),
   outline=Color(0xFF82767B),outlineVariant=Color(0xFF494247)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 82.dp else 34.dp } else 0.dp)){
+ val appShapes = androidx.compose.material3.Shapes(
+  extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+  small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+  medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+  large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+  extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+ )
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 82.dp else 34.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
