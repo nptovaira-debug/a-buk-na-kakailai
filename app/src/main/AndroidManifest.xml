@@ -4,7 +4,7 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/ic_launcher_new"
         android:label="A Buk na Kakailai"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:supportsRtl="true">
