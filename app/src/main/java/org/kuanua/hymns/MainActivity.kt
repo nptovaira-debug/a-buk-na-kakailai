@@ -759,13 +759,13 @@ class MainActivity:ComponentActivity(){
       }
      }
      if(index==5 && tab!="Service" && adsAllowed && BuildConfig.ADMOB_NATIVE_AD_UNIT_ID.isNotBlank()) {
-      NativeAdCard()
+      NativeAdCard(adRefreshKey)
      }
     }
    }
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
-   if(tab!="Service") AdMobBanner(adsAllowed)
+   if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
   }
   if (!presenting && presentingHymn == null) {
    Spacer(Modifier.height(2.dp))
@@ -800,7 +800,7 @@ class MainActivity:ComponentActivity(){
 private fun AdMobBanner(adsAllowed:Boolean, refreshKey:Int) {
  if(!adsAllowed || BuildConfig.ADMOB_BANNER_AD_UNIT_ID.isBlank()) return
  val context = LocalContext.current
- val adView = remember {
+ val adView = remember(refreshKey) {
   AdView(context).apply {
    adUnitId = BuildConfig.ADMOB_BANNER_AD_UNIT_ID
    val availableWidth = (context.resources.configuration.screenWidthDp - 32).coerceAtLeast(1)
@@ -817,8 +817,8 @@ private fun NativeAdCard(refreshKey:Int) {
  val context = LocalContext.current
  val adUnitId = BuildConfig.ADMOB_NATIVE_AD_UNIT_ID
  if(adUnitId.isBlank()) return
- val nativeAdState = remember { mutableStateOf<NativeAd?>(null) }
- DisposableEffect(adUnitId) {
+ val nativeAdState = remember(refreshKey) { mutableStateOf<NativeAd?>(null) }
+ DisposableEffect(adUnitId, refreshKey) {
   val loader = AdLoader.Builder(context, adUnitId)
    .forNativeAd { loadedAd ->
     nativeAdState.value?.destroy()
