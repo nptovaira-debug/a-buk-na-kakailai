@@ -1,3 +1,4 @@
+# Build workflow for the current app release candidate
 name: Android build
 on:
   push:
