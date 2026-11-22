@@ -617,7 +617,6 @@ class MainActivity:ComponentActivity(){
     Button(onClick={prefs.edit().putString("note_"+h.number,note).apply();saved=true}){Text("Save note")}
     if(saved)Text("Note saved on this device.",style=MaterialTheme.typography.bodySmall)
    }
-   }
    if(showRecordingDialog) {
     AlertDialog(
      onDismissRequest={showRecordingDialog=false},
