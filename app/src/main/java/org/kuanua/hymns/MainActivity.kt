@@ -811,9 +811,6 @@ class MainActivity:ComponentActivity(){
       }
      }
     }
-   }
-   if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
-   if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
     item {
      Column(
       Modifier.fillMaxWidth().padding(top=12.dp,bottom=16.dp),
@@ -831,6 +828,9 @@ class MainActivity:ComponentActivity(){
       }
      }
     }
+   }
+   if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
+   if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    }
   }
  }
