@@ -106,6 +106,27 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
 }
 
 @Composable
+private fun RecordingPlaybackControls(recording:HymnRecording) {
+ val uriHandler=LocalUriHandler.current
+ val context=LocalContext.current
+ var showPlayer by remember(recording.url) { mutableStateOf(false) }
+ Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+   Button(onClick={showPlayer=!showPlayer},modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=12.dp,vertical=8.dp)) {
+    Text(if(showPlayer) "Hide player" else "▶ Play")
+   }
+   OutlinedButton(onClick={
+    runCatching { uriHandler.openUri(recording.url) }
+     .onFailure { Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show() }
+   },modifier=Modifier.weight(1f),contentPadding=PaddingValues(horizontal=12.dp,vertical=8.dp)) {
+    Text("Open link")
+   }
+  }
+  if(showPlayer) RecordingEmbed(recording)
+ }
+}
+
+@Composable
 private fun RecordingEmbed(recording:HymnRecording) {
  val embedUrl=remember(recording.url,recording.platform) { recordingEmbedUrl(recording) }
  if(embedUrl==null) {
@@ -531,7 +552,7 @@ class MainActivity:ComponentActivity(){
            Surface(Modifier.fillMaxWidth(),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.95f)){
             Column(Modifier.fillMaxWidth().padding(8.dp)){
              Text(recording.title.ifBlank { recording.platform+" recording" },fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Color.White,modifier=Modifier.padding(bottom=5.dp))
-             RecordingEmbed(recording)
+             RecordingPlaybackControls(recording)
             }
            }
           }
@@ -605,10 +626,9 @@ class MainActivity:ComponentActivity(){
         Text(recording.title.ifBlank { recording.platform+" recording" },fontWeight=FontWeight.SemiBold)
         Text(recording.platform,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
        }
-       if(recordingEmbedUrl(recording)==null) TextButton(onClick={runCatching{uriHandler.openUri(recording.url)}.onFailure{Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show()}}) { Text("Open externally") }
-       TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
+        TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
       }
-      RecordingEmbed(recording)
+      RecordingPlaybackControls(recording)
      }
     }
     if (sharedRecordings.isNotEmpty()) {
