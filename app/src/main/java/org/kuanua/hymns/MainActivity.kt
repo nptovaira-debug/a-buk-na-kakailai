@@ -128,6 +128,7 @@ private fun RecordingEmbed(recording:HymnRecording) {
  if(embedUrl==null) {
   Text("This link cannot be played inside the app. You can still open it externally.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(8.dp))
  } else {
+  val isYouTube=remember(recording.platform) { recording.platform.equals("youtube",ignoreCase=true) }
   val isAudio=remember(embedUrl) { Uri.parse(embedUrl).path.orEmpty().substringAfterLast('.', "").lowercase() in setOf("mp3","m4a","aac","ogg","wav","oga","opus") }
   AndroidView(modifier=Modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
    settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=false
@@ -141,7 +142,7 @@ private fun RecordingEmbed(recording:HymnRecording) {
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture\"></iframe></body></html>"
    }
-   loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   if(isYouTube) loadUrl(embedUrl) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }},update={view->if(view.tag!=embedUrl){
    view.tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
@@ -150,7 +151,7 @@ private fun RecordingEmbed(recording:HymnRecording) {
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture\"></iframe></body></html>"
    }
-   view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   if(isYouTube) view.loadUrl(embedUrl) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }})
  }
 }
