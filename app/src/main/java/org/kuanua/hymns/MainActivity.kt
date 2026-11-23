@@ -701,7 +701,9 @@ class MainActivity:ComponentActivity(){
      }
     }
     sharedRecordingsMessage?.let { Text(it,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp)) }
-    Text("Your saved links are stored on this device. New community submissions are reviewed before appearing publicly.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp))
+    if (hymnRecordings.value.isEmpty() && sharedRecordings.isEmpty()) {
+     Text("Your saved links are stored on this device. New community submissions are reviewed before appearing publicly.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=4.dp))
+    }
     if(h.verses.isEmpty())Text("This hymn is not reproduced in the supplied source scan. No lyrics have been added.")
     h.verses.forEach{v->Text("Verse "+v.number,fontWeight=FontWeight.Bold,modifier=Modifier.padding(top=10.dp));Text(v.text,fontSize=scale.sp,modifier=Modifier.padding(vertical=8.dp))}
     HorizontalDivider()
