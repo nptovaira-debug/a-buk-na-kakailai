@@ -355,6 +355,21 @@ class MainActivity:ComponentActivity(){
  var recordingPlatform by remember { mutableStateOf("YouTube") }
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
+ var approvedVideoHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
+ LaunchedEffect(Unit) {
+  FirebaseFirestore.getInstance().collection("recordings").whereEqualTo("status","approved").get()
+   .addOnSuccessListener { snapshot ->
+    approvedVideoHymnNumbers = snapshot.documents.mapNotNull { doc ->
+     val number = doc.getLong("hymnNumber")?.toInt() ?: return@mapNotNull null
+     val platform = doc.getString("platform") ?: return@mapNotNull null
+     val url = doc.getString("url") ?: return@mapNotNull null
+     val recording = HymnRecording(platform,"",url)
+     val ext = Uri.parse(url).path.orEmpty().substringAfterLast('.', "").lowercase()
+     if (recordingEmbedUrl(recording) != null && ext !in setOf("mp3","m4a","aac","ogg","wav","oga","opus")) number else null
+    }.toSet()
+   }
+ }
+
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
  var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }; var activeRecording by remember { mutableStateOf<HymnRecording?>(null) }; var playerMinimized by remember { mutableStateOf(false) }
  LaunchedEffect(opened, presenting, presentingHymn) { if (opened == null && !presenting && presentingHymn == null) { activeRecording = null; playerMinimized = false } }; LaunchedEffect(presenting, presentingHymn) { if (presenting || presentingHymn != null) playerMinimized = true }
@@ -855,6 +870,16 @@ class MainActivity:ComponentActivity(){
        Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
         Column(Modifier.weight(1f)){
          Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold)
+         val localHasVideo = loadHymnRecordings(prefs,h.number).any { recording ->
+          val ext = Uri.parse(recording.url).path.orEmpty().substringAfterLast('.', "").lowercase()
+          recordingEmbedUrl(recording) != null && ext !in setOf("mp3","m4a","aac","ogg","wav","oga","opus")
+         }
+         if(localHasVideo || approvedVideoHymnNumbers.contains(h.number)) {
+          Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
+           Icon(Icons.Default.PlayCircle,contentDescription="Video available",tint=MaterialTheme.colorScheme.primary,modifier=Modifier.size(15.dp))
+           Text("Video available",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+          }
+         }
          if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)
         }
         if(tab=="Service")Row(horizontalArrangement=Arrangement.spacedBy(0.dp)){
