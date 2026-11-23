@@ -90,6 +90,11 @@ private fun normalizeSearch(value:String):String = value.lowercase().filter { it
 
 private data class HymnRecording(val platform:String,val title:String,val url:String)
 
+private fun recordingPlayerHtml(playerUrl:String):String {
+ val escaped=playerUrl.replace("&","&amp;").replace("\\\"","&quot;").replace("<","&lt;").replace(">","&gt;")
+ return "<!doctype html><html><head><meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\\\""+escaped+"\\\" allow=\\\"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share\\\" allowfullscreen></iframe></body></html>"
+}
+
 private fun recordingEmbedUrl(recording:HymnRecording):String? {
  val uri=runCatching { Uri.parse(recording.url.trim()) }.getOrNull() ?: return null
  val host=uri.host?.lowercase()?.removePrefix("www.") ?: return null
@@ -107,6 +112,7 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
   }
   "facebook" -> {
    if(!(host=="facebook.com" || host=="fb.watch" || host.endsWith(".facebook.com"))) return null
+   if(path.startsWith("/share/v/") || host=="fb.watch") return recording.url.trim()
    "https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(recording.url.trim(),"UTF-8")+"&show_text=false&width=560"
   }
   "instagram" -> { if(host!="instagram.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("p","reel","tv")) return null; "https://www.instagram.com/"+p[0]+"/"+p[1]+"/embed" }
@@ -156,15 +162,26 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
    webViewClient=object:WebViewClient(){
     override fun onPageStarted(view:WebView,url:String,favicon:android.graphics.Bitmap?) {
-     val shortHost=Uri.parse(embedUrl).host?.lowercase()
-     if(recording.platform.equals("tiktok",ignoreCase=true) && (shortHost=="vt.tiktok.com" || shortHost=="vm.tiktok.com")) {
-      val finalPath=runCatching { Uri.parse(url).path.orEmpty() }.getOrDefault("")
-      val videoId=Regex("/video/(\\d+)").find(finalPath)?.groupValues?.get(1) ?: Regex("/player/v1/(\\d+)").find(finalPath)?.groupValues?.get(1)
-      if(videoId!=null && !finalPath.startsWith("/player/v1/")) {
-        view.stopLoading()
-        val playerUrl="https://www.tiktok.com/player/v1/"+videoId+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
-        view.loadUrl(playerUrl)
-       }
+     val sourceUri=runCatching { Uri.parse(recording.url.trim()) }.getOrNull()
+     val sourceHost=sourceUri?.host?.lowercase()?.removePrefix("www.").orEmpty()
+     val currentUri=runCatching { Uri.parse(url) }.getOrNull()
+     val currentHost=currentUri?.host?.lowercase()?.removePrefix("www.").orEmpty()
+     val currentPath=currentUri?.path.orEmpty()
+     if(recording.platform.equals("tiktok",ignoreCase=true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) {
+      val videoId=Regex("/video/(\\d+)").find(currentPath)?.groupValues?.get(1)
+      if(videoId!=null) {
+       view.stopLoading()
+       val playerUrl="https://www.tiktok.com/player/v1/"+videoId+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
+       view.loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(playerUrl),"text/html","UTF-8",null)
+      }
+     }
+     if(recording.platform.equals("facebook",ignoreCase=true) && (sourceUri?.path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch")) {
+      val isVideoPermalink=currentHost.endsWith("facebook.com") && (Regex("/(?:videos|reel|watch)/").containsMatchIn(currentPath) || currentUri?.getQueryParameter("v")!=null || currentUri?.getQueryParameter("story_fbid")!=null)
+      if(isVideoPermalink && !currentPath.startsWith("/plugins/video.php")) {
+       view.stopLoading()
+       val pluginUrl="https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(url.substringBefore("#"),"UTF-8")+"&show_text=false&width=560"
+       view.loadDataWithBaseURL("https://www.facebook.com/",recordingPlayerHtml(pluginUrl),"text/html","UTF-8",null)
+      }
      }
     }
     override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Could not load this recording. Check your internet connection or try Open link.",Toast.LENGTH_LONG).show() }
@@ -176,7 +193,8 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
    val shortHost=Uri.parse(embedUrl).host?.lowercase()
-    if(recording.platform.equals("tiktok",ignoreCase=true) || recording.platform.equals("facebook",ignoreCase=true)) loadUrl(embedUrl) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+    val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
+    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) loadUrl(recording.url.trim()) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("tiktok",true)||recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
   }},update={view->if(view.tag!=embedUrl){
    view.tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
@@ -186,7 +204,8 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
    val shortHost=Uri.parse(embedUrl).host?.lowercase()
-    if(recording.platform.equals("tiktok",ignoreCase=true) || recording.platform.equals("facebook",ignoreCase=true)) view.loadUrl(embedUrl) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+    val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
+    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) view.loadUrl(recording.url.trim()) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("tiktok",true)||recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
   }})
  }
 }
