@@ -157,7 +157,7 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
   val isAudio=remember(embedUrl) { Uri.parse(embedUrl).path.orEmpty().substringAfterLast('.', "").lowercase() in setOf("mp3","m4a","aac","ogg","wav","oga","opus") }
   AndroidView(modifier=modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
    settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=false
-   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
+   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
    webViewClient=object:WebViewClient(){
@@ -175,16 +175,9 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
        view.loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(playerUrl),"text/html","UTF-8",null)
       }
      }
-     if(recording.platform.equals("facebook",ignoreCase=true) && (sourceUri?.path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch")) {
-      val isVideoPermalink=currentHost.endsWith("facebook.com") && (Regex("/(?:videos|reel|watch)/").containsMatchIn(currentPath) || currentUri?.getQueryParameter("v")!=null || currentUri?.getQueryParameter("story_fbid")!=null)
-      if(isVideoPermalink && !currentPath.startsWith("/plugins/video.php")) {
-       view.stopLoading()
-       val pluginUrl="https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(url.substringBefore("#"),"UTF-8")+"&show_text=false&width=560"
-       view.loadDataWithBaseURL("https://www.facebook.com/",recordingPlayerHtml(pluginUrl),"text/html","UTF-8",null)
-      }
-     }
+
     }
-    override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Could not load this recording. Check your internet connection or try Open link.",Toast.LENGTH_LONG).show() }
+    override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Video page failed to load (WebView error "+error.errorCode+"). Try Open link.",Toast.LENGTH_LONG).show() }
    }; webChromeClient=WebChromeClient(); setLayerType(android.view.View.LAYER_TYPE_HARDWARE,null); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
    val html=if(isAudio) {
