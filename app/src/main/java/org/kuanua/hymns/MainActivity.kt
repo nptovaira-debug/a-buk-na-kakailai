@@ -349,7 +349,7 @@ class MainActivity:ComponentActivity(){
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
  var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }; var activeRecording by remember { mutableStateOf<HymnRecording?>(null) }
- LaunchedEffect(opened, presenting, presentingHymn, showAdminPanel) { if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) activeRecording = null }
+ LaunchedEffect(opened, presenting, presentingHymn) { if (opened == null && !presenting && presentingHymn == null) activeRecording = null }
  var adminUid by remember { mutableStateOf<String?>(null) }
  var isAdmin by remember { mutableStateOf(false) }
  var showAdminPanel by remember { mutableStateOf(false) }
