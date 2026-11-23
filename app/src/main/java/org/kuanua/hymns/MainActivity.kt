@@ -889,7 +889,7 @@ class MainActivity:ComponentActivity(){
   if(playerMinimized) {
    Box(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth()) {
     // Keep the WebView attached to the window while collapsed so embedded media is not destroyed.
-    RecordingEmbed(activeRecording!!,Modifier.size(1.dp).alpha(0f))
+    RecordingEmbed(activeRecording!!,Modifier.fillMaxWidth().height(220.dp).alpha(0f))
     Surface(Modifier.fillMaxWidth().padding(horizontal=8.dp),shape=MaterialTheme.shapes.large,color=MaterialTheme.colorScheme.primary) {
     Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
      Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.14f)) {
