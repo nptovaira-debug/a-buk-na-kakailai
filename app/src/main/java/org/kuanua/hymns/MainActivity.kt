@@ -120,6 +120,10 @@ private fun isAudioRecording(recording:HymnRecording):Boolean {
  return recordingEmbedUrl(recording)!=null && (recording.platform.equals("spotify",ignoreCase=true) || extension in setOf("mp3","m4a","aac","ogg","wav","oga","opus"))
 }
 
+private fun isVideoRecording(recording:HymnRecording):Boolean {
+ return recording.platform.lowercase() in setOf("youtube","tiktok","facebook","instagram") && recordingEmbedUrl(recording)!=null
+}
+
 @Composable
 private fun RecordingPlaybackControls(recording:HymnRecording,activeRecording:HymnRecording?,onPlay:(HymnRecording)->Unit,onHide:()->Unit) {
  val uriHandler=LocalUriHandler.current
@@ -380,6 +384,7 @@ class MainActivity:ComponentActivity(){
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var approvedAudioHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
+ var approvedVideoHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
  LaunchedEffect(Unit) {
   FirebaseFirestore.getInstance().collection("recordings").whereEqualTo("status","approved").get()
    .addOnSuccessListener { snapshot ->
@@ -387,8 +392,13 @@ class MainActivity:ComponentActivity(){
      val number = doc.getLong("hymnNumber")?.toInt() ?: return@mapNotNull null
      val platform = doc.getString("platform") ?: return@mapNotNull null
      val url = doc.getString("url") ?: return@mapNotNull null
-     val recording = HymnRecording(platform,"",url)
-     if (isAudioRecording(recording)) number else null
+     if (isAudioRecording(HymnRecording(platform,"",url))) number else null
+    }.toSet()
+    approvedVideoHymnNumbers = snapshot.documents.mapNotNull { doc ->
+     val number = doc.getLong("hymnNumber")?.toInt() ?: return@mapNotNull null
+     val platform = doc.getString("platform") ?: return@mapNotNull null
+     val url = doc.getString("url") ?: return@mapNotNull null
+     if (isVideoRecording(HymnRecording(platform,"",url))) number else null
     }.toSet()
    }
  }
@@ -832,7 +842,7 @@ class MainActivity:ComponentActivity(){
      Box {
       OutlinedButton(onClick={sourceFilterExpanded=true},modifier=Modifier.height(56.dp),contentPadding=PaddingValues(horizontal=8.dp,vertical=0.dp)){Text("Filter")}
       DropdownMenu(expanded=sourceFilterExpanded,onDismissRequest={sourceFilterExpanded=false}){
-      listOf("All sources","Has reference","Hymns with audio","M.H.B.","Other references","1200.S.","S.M.","German Tune","888.S.","Gypsy Smith's Hymnal","Alexander H.B.","M.S.S.H.B.","Tune: March of the Men of Harlech","Children's Hosannas","L.M.","C.M.","A.S.","Tune: Banner Anniversary H.B.","L. Tonkin","M.B.B.","Heart and Voice","Music by Thomas Troman").forEach { option ->
+      listOf("All sources","Has reference","Hymns with audio","Hymn video available","M.H.B.","Other references","1200.S.","S.M.","German Tune","888.S.","Gypsy Smith's Hymnal","Alexander H.B.","M.S.S.H.B.","Tune: March of the Men of Harlech","Children's Hosannas","L.M.","C.M.","A.S.","Tune: Banner Anniversary H.B.","L. Tonkin","M.B.B.","Heart and Voice","Music by Thomas Troman").forEach { option ->
        DropdownMenuItem(text={Text(option)},onClick={sourceFilter=option;sourceFilterExpanded=false})
       }
      }
@@ -866,6 +876,7 @@ class MainActivity:ComponentActivity(){
    val base=when(tab){"Favourites"->hymns.filter{favs.contains(it.number.toString())};"Recent"->recent.mapNotNull{id->hymns.find{it.number.toString()==id}};"Service"->playlist.mapNotNull{id->hymns.find{it.number.toString()==id}};else->hymns}
    val normalizedQuery=normalizeSearch(query)
    fun hasAudio(hymnNumber:Int):Boolean = approvedAudioHymnNumbers.contains(hymnNumber) || loadHymnRecordings(prefs,hymnNumber).any(::isAudioRecording)
+   fun hasVideo(hymnNumber:Int):Boolean = approvedVideoHymnNumbers.contains(hymnNumber) || loadHymnRecordings(prefs,hymnNumber).any(::isVideoRecording)
    val shown=if(tab=="Service")base else base.filter { hymn ->
     val source=normalizeSearch(hymn.source)
     val matchesQuery=query.isBlank() ||
@@ -875,6 +886,7 @@ class MainActivity:ComponentActivity(){
      hymn.verses.any { verse -> normalizeSearch(verse.text).contains(normalizedQuery) }
     val matchesSource=when(sourceFilter){
      "Hymns with audio" -> hasAudio(hymn.number)
+     "Hymn video available" -> hasVideo(hymn.number)
      "Has reference" -> hymn.source.isNotBlank()
      "M.H.B." -> source.contains("mhb")
      "Other references" -> hymn.source.isNotBlank() && !source.contains("mhb")
@@ -895,11 +907,19 @@ class MainActivity:ComponentActivity(){
        Row(Modifier.fillMaxWidth().padding(14.dp),horizontalArrangement=Arrangement.SpaceBetween){
         Column(Modifier.weight(1f)){
          Text(h.number.toString()+". "+displayHymnTitle(h),fontWeight=FontWeight.SemiBold)
-         val localHasAudio = loadHymnRecordings(prefs,h.number).any(::isAudioRecording)
-         if(localHasAudio || approvedAudioHymnNumbers.contains(h.number)) {
-          Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-           Text("♫",fontSize=12.sp,color=MaterialTheme.colorScheme.primary)
-           Text("Audio available",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+         val localRecordings = loadHymnRecordings(prefs,h.number)
+         val hasAudioIndicator = approvedAudioHymnNumbers.contains(h.number) || localRecordings.any(::isAudioRecording)
+         val hasVideoIndicator = approvedVideoHymnNumbers.contains(h.number) || localRecordings.any(::isVideoRecording)
+         if(hasAudioIndicator || hasVideoIndicator) {
+          Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+           if(hasAudioIndicator) Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(3.dp)) {
+            Text("♫",fontSize=12.sp,color=MaterialTheme.colorScheme.primary)
+            Text("Audio available",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+           }
+           if(hasVideoIndicator) Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(3.dp)) {
+            Text("▶",fontSize=11.sp,color=MaterialTheme.colorScheme.primary)
+            Text("Video available",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
+           }
           }
          }
          if(h.source.isNotBlank())Text(h.source,style=MaterialTheme.typography.bodySmall)
