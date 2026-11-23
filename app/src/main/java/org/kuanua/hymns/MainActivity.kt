@@ -357,6 +357,8 @@ class MainActivity:ComponentActivity(){
  var showAdminPanel by remember { mutableStateOf(false) }
  var showAdminSetupDialog by remember { mutableStateOf(false) }
  var pendingSubmissions by remember { mutableStateOf<List<com.google.firebase.firestore.DocumentSnapshot>>(emptyList()) }
+ var approvedRecordings by remember { mutableStateOf<List<com.google.firebase.firestore.DocumentSnapshot>>(emptyList()) }
+ var recordingToDelete by remember { mutableStateOf<com.google.firebase.firestore.DocumentSnapshot?>(null) }
  var adminMessage by remember { mutableStateOf<String?>(null) }
  var adminLoading by remember { mutableStateOf(false) }
  LaunchedEffect(Unit) {
@@ -386,6 +388,34 @@ class MainActivity:ComponentActivity(){
    .get()
    .addOnSuccessListener { pendingSubmissions = it.documents; adminMessage = if (it.isEmpty) "No submissions are waiting for review." else null; adminLoading = false }
    .addOnFailureListener { adminMessage = "Could not load submissions. Check your connection."; adminLoading = false }
+ }
+ fun loadApprovedRecordings() {
+  FirebaseFirestore.getInstance().collection("recordings")
+   .whereEqualTo("status", "approved")
+   .get()
+   .addOnSuccessListener { approvedRecordings = it.documents }
+   .addOnFailureListener { adminMessage = "Could not load approved links. Check your connection." }
+ }
+ fun loadAdminData() {
+  loadPendingSubmissions()
+  loadApprovedRecordings()
+ }
+ fun deleteApprovedRecording(doc: com.google.firebase.firestore.DocumentSnapshot) {
+  val db = FirebaseFirestore.getInstance()
+  db.batch().apply {
+   delete(db.collection("recordings").document(doc.id))
+   delete(db.collection("recordingSubmissions").document(doc.id))
+  }.commit()
+   .addOnSuccessListener {
+    approvedRecordings = approvedRecordings.filterNot { it.id == doc.id }
+    pendingSubmissions = pendingSubmissions.filterNot { it.id == doc.id }
+    recordingToDelete = null
+    adminMessage = "Recording permanently deleted."
+   }
+   .addOnFailureListener {
+    recordingToDelete = null
+    adminMessage = "Deletion failed. Check your connection and administrator permissions, then try again."
+   }
  }
  fun reviewSubmission(doc: com.google.firebase.firestore.DocumentSnapshot, approve: Boolean) {
   val db = FirebaseFirestore.getInstance()
@@ -491,12 +521,14 @@ class MainActivity:ComponentActivity(){
    Text("COMMUNITY RECORDING REVIEW",style=MaterialTheme.typography.titleLarge,fontWeight=FontWeight.Bold)
    Text("Administrator access · ${adminUid ?: "Not signed in"}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-    Button(onClick={loadPendingSubmissions()}){Text("Refresh")}
+    Button(onClick={loadAdminData()}){Text("Refresh")}
     OutlinedButton(onClick={showAdminPanel=false}){Text("Close")}
    }
    adminMessage?.let { Text(it,style=MaterialTheme.typography.bodySmall) }
    if(adminLoading) CircularProgressIndicator()
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    Text("PENDING SUBMISSIONS",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
+    if(pendingSubmissions.isEmpty() && !adminLoading) Text("No submissions are waiting for review.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     pendingSubmissions.forEach { doc ->
      Card(Modifier.fillMaxWidth()){
       Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
@@ -508,6 +540,20 @@ class MainActivity:ComponentActivity(){
         Button(onClick={reviewSubmission(doc,true)}){Text("Approve")}
         OutlinedButton(onClick={reviewSubmission(doc,false)}){Text("Reject")}
        }
+      }
+     }
+    }
+    HorizontalDivider()
+    Text("PREVIOUSLY APPROVED LINKS",style=MaterialTheme.typography.titleSmall,fontWeight=FontWeight.Bold)
+    if(approvedRecordings.isEmpty()) Text("No approved links are currently published.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    approvedRecordings.forEach { doc ->
+     Card(Modifier.fillMaxWidth()){
+      Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+       Text("Hymn " + (doc.getLong("hymnNumber") ?: 0L),fontWeight=FontWeight.Bold)
+       Text(doc.getString("title").orEmpty().ifBlank { doc.getString("platform") ?: "Recording" })
+       Text(doc.getString("platform") ?: "Other",style=MaterialTheme.typography.bodySmall)
+       Text(doc.getString("url").orEmpty(),style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
+       OutlinedButton(onClick={recordingToDelete=doc}){Text("Delete permanently")}
       }
      }
     }
@@ -824,7 +870,7 @@ class MainActivity:ComponentActivity(){
       ) {
        TextButton(onClick={uriHandler.openUri("https://nptovaira-debug.github.io/a-buk-na-kakailai/privacy.html")},modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy Policy",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
        if(privacyOptionsRequired) TextButton(onClick=onPrivacyOptionsClick,modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text("Privacy choices",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-       TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadPendingSubmissions() } else showAdminSetupDialog=true },modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+       TextButton(onClick={ if (isAdmin) { showAdminPanel=true; loadAdminData() } else showAdminSetupDialog=true },modifier=Modifier.height(30.dp),contentPadding=PaddingValues(horizontal=6.dp,vertical=0.dp)) { Text(if (isAdmin) "Review recordings" else "Admin setup",fontSize=10.sp,color=MaterialTheme.colorScheme.onSurfaceVariant) }
       }
      }
     }
@@ -846,6 +892,13 @@ class MainActivity:ComponentActivity(){
  }
  }
 if(showWelcome) WelcomeScreen(darkMode)
+ if(recordingToDelete != null) AlertDialog(
+  onDismissRequest={recordingToDelete=null},
+  title={Text("Permanently delete link?")},
+  text={Text("This will permanently remove this approved recording from the public list and erase its stored submission record. This action cannot be undone.")},
+  confirmButton={TextButton(onClick={recordingToDelete?.let { deleteApprovedRecording(it) }}){Text("Delete permanently",color=MaterialTheme.colorScheme.error)}},
+  dismissButton={TextButton(onClick={recordingToDelete=null}){Text("Cancel")}}
+ )
  if(showAdminSetupDialog) AlertDialog(
   onDismissRequest={showAdminSetupDialog=false},
   title={Text("Administrator setup")},
