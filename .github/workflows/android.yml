@@ -1,4 +1,4 @@
-# Build workflow for the version 1.0.8 release candidate
+# Build workflow for version 1.0.8: TikTok short links and hymn audio/video indicators
 name: Android build
 on:
   push:
