@@ -882,11 +882,18 @@ class MainActivity:ComponentActivity(){
  }
  if(activeRecording!=null) {
   if(playerMinimized) {
-   Row(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-    Text("▶",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)
-    Text(activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
-    TextButton(onClick={playerMinimized=false}) { Text("Expand") }
-    TextButton(onClick={activeRecording=null;playerMinimized=false}) { Text("✕") }
+   Surface(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().padding(horizontal=8.dp),shape=MaterialTheme.shapes.large,color=MaterialTheme.colorScheme.primary) {
+    Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+     Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.14f)) {
+      Box(Modifier.size(34.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text("▶",color=MaterialTheme.colorScheme.onPrimary,fontWeight=FontWeight.Bold) }
+     }
+     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)) {
+      Text(activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onPrimary,maxLines=1)
+      Text("Now playing",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f),maxLines=1)
+     }
+     TextButton(onClick={playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=7.dp,vertical=4.dp)) { Text("Expand") }
+     TextButton(onClick={activeRecording=null;playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=5.dp,vertical=4.dp)) { Text("✕") }
+    }
    }
   } else {
    Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
