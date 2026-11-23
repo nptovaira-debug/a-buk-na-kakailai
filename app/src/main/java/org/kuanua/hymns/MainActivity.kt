@@ -681,7 +681,7 @@ class MainActivity:ComponentActivity(){
        }
         TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
       }
-      RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
+      RecordingPlaybackControls(recording,activeRecording,{activeRecording=it;playerMinimized=presenting || presentingHymn != null},{activeRecording=null})
      }
     }
     if (sharedRecordings.isNotEmpty()) {
@@ -694,7 +694,7 @@ class MainActivity:ComponentActivity(){
          Text(recording.platform+" · Approved",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
        }
-       RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
+       RecordingPlaybackControls(recording,activeRecording,{activeRecording=it;playerMinimized=presenting || presentingHymn != null},{activeRecording=null})
       }
      }
     }
