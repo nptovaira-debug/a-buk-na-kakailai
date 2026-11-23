@@ -106,26 +106,22 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
 }
 
 @Composable
-private fun RecordingPlaybackControls(recording:HymnRecording) {
+private fun RecordingPlaybackControls(recording:HymnRecording,activeRecording:HymnRecording?,onPlay:(HymnRecording)->Unit,onHide:()->Unit) {
  val uriHandler=LocalUriHandler.current
  val context=LocalContext.current
- var showPlayer by remember(recording.url) { mutableStateOf(false) }
- Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-   Button(onClick={showPlayer=!showPlayer},modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
-    Text(if(showPlayer) "Hide player" else "▶ Play")
-   }
-   OutlinedButton(onClick={
-    runCatching { uriHandler.openUri(recording.url) }
-     .onFailure { Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show() }
-   },modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
-    Text("Open link")
-   }
+ val isActive=activeRecording?.url==recording.url
+ Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+  Button(onClick={if(isActive) onHide() else onPlay(recording)},modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
+   Text(if(isActive) "Playing above" else "▶ Play")
   }
-  if(showPlayer) RecordingEmbed(recording)
+  OutlinedButton(onClick={
+   runCatching { uriHandler.openUri(recording.url) }
+    .onFailure { Toast.makeText(context,"Could not open this link",Toast.LENGTH_SHORT).show() }
+  },modifier=Modifier.weight(1f).height(44.dp),contentPadding=PaddingValues(horizontal=12.dp,vertical=0.dp)) {
+   Text("Open link")
+  }
  }
 }
-
 @Composable
 private fun RecordingEmbed(recording:HymnRecording) {
  val embedUrl=remember(recording.url,recording.platform) { recordingEmbedUrl(recording) }
@@ -351,7 +347,7 @@ class MainActivity:ComponentActivity(){
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
- var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
+ var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }; var activeRecording by remember { mutableStateOf<HymnRecording?>(null) }
  var adminUid by remember { mutableStateOf<String?>(null) }
  var isAdmin by remember { mutableStateOf(false) }
  var showAdminPanel by remember { mutableStateOf(false) }
@@ -495,7 +491,7 @@ class MainActivity:ComponentActivity(){
   large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
   extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 36.dp else 4.dp } else 0.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(top=if(activeRecording!=null) 240.dp else 0.dp).padding(horizontal=if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 36.dp else 4.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
@@ -605,7 +601,7 @@ class MainActivity:ComponentActivity(){
            Surface(Modifier.fillMaxWidth(),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.95f)){
             Column(Modifier.fillMaxWidth().padding(8.dp)){
              Text(recording.title.ifBlank { recording.platform+" recording" },fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Color.White,modifier=Modifier.padding(bottom=5.dp))
-             RecordingPlaybackControls(recording)
+             RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
             }
            }
           }
@@ -681,7 +677,7 @@ class MainActivity:ComponentActivity(){
        }
         TextButton(onClick={val next=hymnRecordings.value.toMutableList().also{it.removeAt(index)};hymnRecordings.value=next;saveHymnRecordings(prefs,h.number,next)}) { Text("Remove") }
       }
-      RecordingPlaybackControls(recording)
+      RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
      }
     }
     if (sharedRecordings.isNotEmpty()) {
@@ -694,7 +690,7 @@ class MainActivity:ComponentActivity(){
          Text(recording.platform+" · Approved",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
         }
        }
-       RecordingPlaybackControls(recording)
+       RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
       }
      }
     }
@@ -878,6 +874,15 @@ class MainActivity:ComponentActivity(){
    if(tab=="Service"&&playlist.isNotEmpty())TextButton(onClick={playlist=emptyList();prefs.edit().putString("service_playlist","").apply()}){Text("Clear service list")}
    if(tab=="Service"&&playlist.isEmpty())Text("Your service list is empty. Browse hymns and tap + Service to add them.")
    }
+  }
+ }
+ if(activeRecording!=null) {
+  Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+    Text("NOW PLAYING · "+activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
+    TextButton(onClick={activeRecording=null}) { Text("Close player") }
+   }
+   RecordingEmbed(activeRecording!!)
   }
  }
  if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) {
