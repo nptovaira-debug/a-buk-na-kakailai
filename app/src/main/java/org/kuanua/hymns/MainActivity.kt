@@ -57,6 +57,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -123,14 +124,14 @@ private fun RecordingPlaybackControls(recording:HymnRecording,activeRecording:Hy
  }
 }
 @Composable
-private fun RecordingEmbed(recording:HymnRecording) {
+private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) {
  val embedUrl=remember(recording.url,recording.platform) { recordingEmbedUrl(recording) }
  if(embedUrl==null) {
-  Text("This link cannot be played inside the app. You can still open it externally.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(8.dp))
+  Text("This link cannot be played inside the app. You can still open it externally.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=modifier.padding(8.dp))
  } else {
   val isYouTube=remember(recording.platform) { recording.platform.equals("youtube",ignoreCase=true) }
   val isAudio=remember(embedUrl) { Uri.parse(embedUrl).path.orEmpty().substringAfterLast('.', "").lowercase() in setOf("mp3","m4a","aac","ogg","wav","oga","opus") }
-  AndroidView(modifier=Modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
+  AndroidView(modifier=modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
    settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=false
    settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
@@ -886,7 +887,10 @@ class MainActivity:ComponentActivity(){
  }
  if(activeRecording!=null) {
   if(playerMinimized) {
-   Surface(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().padding(horizontal=8.dp),shape=MaterialTheme.shapes.large,color=MaterialTheme.colorScheme.primary) {
+   Box(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth()) {
+    // Keep the WebView attached to the window while collapsed so embedded media is not destroyed.
+    RecordingEmbed(activeRecording!!,Modifier.size(1.dp).alpha(0f))
+    Surface(Modifier.fillMaxWidth().padding(horizontal=8.dp),shape=MaterialTheme.shapes.large,color=MaterialTheme.colorScheme.primary) {
     Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
      Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.14f)) {
       Box(Modifier.size(34.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text("▶",color=MaterialTheme.colorScheme.onPrimary,fontWeight=FontWeight.Bold) }
