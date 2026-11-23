@@ -163,7 +163,7 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
       if(videoId!=null) {
        view.stopLoading()
        val playerUrl="https://www.tiktok.com/player/v1/"+videoId+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
-       val playerHtml="<!doctype html><html><head><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\\""+playerUrl+"\\" allow=\\"autoplay; encrypted-media; picture-in-picture; fullscreen\\" allowfullscreen></iframe></body></html>"
+        val playerHtml="""<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src="$playerUrl" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></body></html>"""
        view.loadDataWithBaseURL("https://www.tiktok.com/",playerHtml,"text/html","UTF-8",null)
       }
      }
