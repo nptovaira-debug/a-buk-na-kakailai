@@ -348,8 +348,8 @@ class MainActivity:ComponentActivity(){
  var recordingError by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
- var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }; var activeRecording by remember { mutableStateOf<HymnRecording?>(null) }
- LaunchedEffect(opened, presenting, presentingHymn) { if (opened == null && !presenting && presentingHymn == null) activeRecording = null }
+ var presentationSharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }; var activeRecording by remember { mutableStateOf<HymnRecording?>(null) }; var playerMinimized by remember { mutableStateOf(false) }
+ LaunchedEffect(opened, presenting, presentingHymn) { if (opened == null && !presenting && presentingHymn == null) { activeRecording = null; playerMinimized = false } }; LaunchedEffect(presenting, presentingHymn) { if (presenting || presentingHymn != null) playerMinimized = true }
  var adminUid by remember { mutableStateOf<String?>(null) }
  var isAdmin by remember { mutableStateOf(false) }
  var showAdminPanel by remember { mutableStateOf(false) }
@@ -434,7 +434,7 @@ class MainActivity:ComponentActivity(){
   batch.commit().addOnSuccessListener { loadPendingSubmissions(); adminMessage = if (approve) "Recording approved and published." else "Submission rejected." }
    .addOnFailureListener { adminMessage = "Review action failed. Please try again." }
  }
- val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset { if (consumed.y < -6f) headerVisible = false else if (consumed.y > 6f) headerVisible = true; return Offset.Zero } } }
+ val headerScrollConnection = remember { object : NestedScrollConnection { override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset { if (consumed.y < -6f) { headerVisible = false; if (activeRecording != null) playerMinimized = true } else if (consumed.y > 6f) headerVisible = true; return Offset.Zero } } }
  BackHandler(enabled = opened != null || presenting || presentingHymn != null || showAdminPanel || showAdminSetupDialog) { when { showAdminSetupDialog -> showAdminSetupDialog = false; presenting -> presenting = false; presentingHymn != null -> presentingHymn = null; showAdminPanel -> showAdminPanel = false; opened != null -> opened = null } }
  fun favourite(n:Int){val next=favs.toMutableSet();if(!next.add(n.toString()))next.remove(n.toString());favs=next;prefs.edit().putStringSet("favs",next).apply()}
  fun open(h:Hymn){opened=h;recent=(listOf(h.number.toString())+recent.filter{it!=h.number.toString()}).take(30);prefs.edit().putString("recent",recent.joinToString(",")).apply()}
@@ -493,7 +493,7 @@ class MainActivity:ComponentActivity(){
   large = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
   extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
  )
- MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(top=if(activeRecording!=null) 240.dp else 0.dp).padding(horizontal=if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 36.dp else 4.dp } else 0.dp)){
+ MaterialTheme(colorScheme=if(darkMode) darkPalette else lightPalette, typography=modernTypography, shapes=appShapes){Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background){Box(Modifier.fillMaxSize().safeDrawingPadding().nestedScroll(headerScrollConnection)){Column(Modifier.fillMaxSize().padding(top=if(activeRecording!=null) { if(playerMinimized) 64.dp else 240.dp } else 0.dp).padding(horizontal=if(presenting || presentingHymn != null) 0.dp else 16.dp).padding(bottom=if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) { if (tab != "Service") 36.dp else 4.dp } else 0.dp)){
    Column(Modifier.weight(1f)) {
   if (!presenting && presentingHymn == null) AnimatedVisibility(
    visible=headerVisible,
@@ -603,7 +603,7 @@ class MainActivity:ComponentActivity(){
            Surface(Modifier.fillMaxWidth(),shape=MaterialTheme.shapes.large,color=stageCard.copy(alpha=.95f)){
             Column(Modifier.fillMaxWidth().padding(8.dp)){
              Text(recording.title.ifBlank { recording.platform+" recording" },fontSize=12.sp,fontWeight=FontWeight.SemiBold,color=Color.White,modifier=Modifier.padding(bottom=5.dp))
-             RecordingPlaybackControls(recording,activeRecording,{activeRecording=it},{activeRecording=null})
+             RecordingPlaybackControls(recording,activeRecording,{activeRecording=it;playerMinimized=false},{activeRecording=null})
             }
            }
           }
@@ -881,12 +881,22 @@ class MainActivity:ComponentActivity(){
   }
  }
  if(activeRecording!=null) {
-  Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-    Text("NOW PLAYING · "+activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
-    TextButton(onClick={activeRecording=null}) { Text("Close player") }
+  if(playerMinimized) {
+   Row(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=6.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+    Text("▶",color=MaterialTheme.colorScheme.primary,fontWeight=FontWeight.Bold)
+    Text(activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
+    TextButton(onClick={playerMinimized=false}) { Text("Expand") }
+    TextButton(onClick={activeRecording=null;playerMinimized=false}) { Text("✕") }
    }
-   RecordingEmbed(activeRecording!!)
+  } else {
+   Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+     Text("NOW PLAYING · "+activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
+     TextButton(onClick={playerMinimized=true}) { Text("Minimise") }
+     TextButton(onClick={activeRecording=null;playerMinimized=false}) { Text("Close") }
+    }
+    RecordingEmbed(activeRecording!!)
+   }
   }
  }
  if (opened == null && !presenting && presentingHymn == null && !showAdminPanel) {
