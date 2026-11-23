@@ -886,32 +886,34 @@ class MainActivity:ComponentActivity(){
   }
  }
  if(activeRecording!=null) {
-  if(playerMinimized) {
-   Box(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth()) {
-    // Keep the WebView attached to the window while collapsed so embedded media is not destroyed.
-    RecordingEmbed(activeRecording!!,Modifier.fillMaxWidth().height(220.dp).alpha(0f))
+  Box(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth()) {
+   // Keep one WebView instance in the composition. Changing player mode only changes
+   // its presentation, never replaces the AndroidView and interrupts its media session.
+   Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+    if(!playerMinimized) {
+     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+      Text("NOW PLAYING · "+activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
+      TextButton(onClick={playerMinimized=true}) { Text("Minimise") }
+      TextButton(onClick={activeRecording=null;playerMinimized=false}) { Text("Close") }
+     }
+    }
+    // Keep the same WebView alive while compact; do not create a second player.
+    RecordingEmbed(activeRecording!!,Modifier.fillMaxWidth().height(if(playerMinimized) 1.dp else 220.dp).alpha(if(playerMinimized) 0f else 1f))
+   }
+   if(playerMinimized) {
     Surface(Modifier.fillMaxWidth().padding(horizontal=8.dp),shape=MaterialTheme.shapes.large,color=MaterialTheme.colorScheme.primary) {
-    Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-     Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.14f)) {
-      Box(Modifier.size(34.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text("▶",color=MaterialTheme.colorScheme.onPrimary,fontWeight=FontWeight.Bold) }
+     Row(Modifier.fillMaxWidth().padding(horizontal=10.dp,vertical=7.dp),verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+      Surface(shape=MaterialTheme.shapes.small,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.14f)) {
+       Box(Modifier.size(34.dp),contentAlignment=androidx.compose.ui.Alignment.Center) { Text("▶",color=MaterialTheme.colorScheme.onPrimary,fontWeight=FontWeight.Bold) }
+      }
+      Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)) {
+       Text(activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onPrimary,maxLines=1)
+       Text("Now playing",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f),maxLines=1)
+      }
+      TextButton(onClick={playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=7.dp,vertical=4.dp)) { Text("Expand") }
+      TextButton(onClick={activeRecording=null;playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=5.dp,vertical=4.dp)) { Text("✕") }
      }
-     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(1.dp)) {
-      Text(activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,color=MaterialTheme.colorScheme.onPrimary,maxLines=1)
-      Text("Now playing",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onPrimary.copy(alpha=.78f),maxLines=1)
-     }
-     TextButton(onClick={playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=7.dp,vertical=4.dp)) { Text("Expand") }
-     TextButton(onClick={activeRecording=null;playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=5.dp,vertical=4.dp)) { Text("✕") }
     }
-   }
-   }
-  } else {
-   Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
-     Text("NOW PLAYING · "+activeRecording!!.title.ifBlank { activeRecording!!.platform+" recording" },style=MaterialTheme.typography.labelMedium,maxLines=1,modifier=Modifier.weight(1f))
-     TextButton(onClick={playerMinimized=true}) { Text("Minimise") }
-     TextButton(onClick={activeRecording=null;playerMinimized=false}) { Text("Close") }
-    }
-    RecordingEmbed(activeRecording!!)
    }
   }
  }
