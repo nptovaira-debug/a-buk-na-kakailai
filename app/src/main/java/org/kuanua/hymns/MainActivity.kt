@@ -96,7 +96,7 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
  val extension=path.substringAfterLast('.',"").lowercase()
  if(extension in setOf("mp3","m4a","aac","ogg","wav","oga","opus")) return recording.url.trim()
  return when(recording.platform.lowercase()) {
-  "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube-nocookie.com/embed/"+id+"?playsinline=1&rel=0" }
+  "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube.com/embed/"+id+"?playsinline=1&controls=1&rel=0&enablejsapi=1" }
   "spotify" -> { if(host!="open.spotify.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("track","album","playlist","episode","show")) return null; "https://open.spotify.com/embed/"+p[0]+"/"+p[1]+"?utm_source=generator" }
   "tiktok" -> { val id=Regex("/video/(\\d+)").find(path)?.groupValues?.get(1) ?: return null; "https://www.tiktok.com/embed/v2/"+id }
   "facebook" -> { if(!(host=="facebook.com" || host=="fb.watch" || host.endsWith(".facebook.com"))) return null; "https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(recording.url,"UTF-8")+"&show_text=false" }
@@ -134,16 +134,16 @@ private fun RecordingEmbed(recording:HymnRecording) {
  } else {
   val isAudio=remember(embedUrl) { Uri.parse(embedUrl).path.orEmpty().substringAfterLast('.', "").lowercase() in setOf("mp3","m4a","aac","ogg","wav","oga","opus") }
   AndroidView(modifier=Modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
-   settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=true
-   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
+   settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=false
+   settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
-   webViewClient=WebViewClient(); webChromeClient=WebChromeClient(); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
+   webViewClient=object:WebViewClient(){ override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Could not load this recording. Check your internet connection or try Open link.",Toast.LENGTH_LONG).show() } }; webChromeClient=WebChromeClient(); setLayerType(android.view.View.LAYER_TYPE_HARDWARE,null); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
    val html=if(isAudio) {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:8px;background:#000;color:#fff}</style></head><body><audio controls preload=\"metadata\" style=\"width:100%\"><source src=\""+escaped+"\"></audio></body></html>"
    } else {
-    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
+    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture\"></iframe></body></html>"
    }
    loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }},update={view->if(view.tag!=embedUrl){
@@ -152,7 +152,7 @@ private fun RecordingEmbed(recording:HymnRecording) {
    val html=if(isAudio) {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:8px;background:#000;color:#fff}</style></head><body><audio controls preload=\"metadata\" style=\"width:100%\"><source src=\""+escaped+"\"></audio></body></html>"
    } else {
-    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
+    "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture\"></iframe></body></html>"
    }
    view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }})
