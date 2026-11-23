@@ -100,6 +100,7 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
   "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube.com/embed/"+id+"?playsinline=1&controls=1&rel=0&enablejsapi=1" }
   "spotify" -> { if(host!="open.spotify.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("track","album","playlist","episode","show")) return null; "https://open.spotify.com/embed/"+p[0]+"/"+p[1]+"?utm_source=generator" }
   "tiktok" -> {
+   if(host=="vt.tiktok.com" || host=="vm.tiktok.com") return recording.url.trim()
    if(!(host=="tiktok.com" || host.endsWith(".tiktok.com"))) return null
    val id=Regex("/(?:video/|player/v1/)(\\d+)").find(path)?.groupValues?.get(1) ?: return null
    "https://www.tiktok.com/player/v1/"+id+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
@@ -149,14 +150,30 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_NEVER_ALLOW
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
-   webViewClient=object:WebViewClient(){ override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Could not load this recording. Check your internet connection or try Open link.",Toast.LENGTH_LONG).show() } }; webChromeClient=WebChromeClient(); setLayerType(android.view.View.LAYER_TYPE_HARDWARE,null); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
+   webViewClient=object:WebViewClient(){
+    override fun onPageStarted(view:WebView,url:String,favicon:android.graphics.Bitmap?) {
+     val shortHost=Uri.parse(embedUrl).host?.lowercase()
+     if(recording.platform.equals("tiktok",ignoreCase=true) && (shortHost=="vt.tiktok.com" || shortHost=="vm.tiktok.com")) {
+      val finalPath=runCatching { Uri.parse(url).path.orEmpty() }.getOrDefault("")
+      val videoId=Regex("/video/(\\d+)").find(finalPath)?.groupValues?.get(1) ?: Regex("/player/v1/(\\d+)").find(finalPath)?.groupValues?.get(1)
+      if(videoId!=null) {
+       view.stopLoading()
+       val playerUrl="https://www.tiktok.com/player/v1/"+videoId+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
+       val playerHtml="<!doctype html><html><head><meta name=\\"viewport\\" content=\\"width=device-width, initial-scale=1\\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\\""+playerUrl+"\\" allow=\\"autoplay; encrypted-media; picture-in-picture; fullscreen\\" allowfullscreen></iframe></body></html>"
+       view.loadDataWithBaseURL("https://www.tiktok.com/",playerHtml,"text/html","UTF-8",null)
+      }
+     }
+    }
+    override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Could not load this recording. Check your internet connection or try Open link.",Toast.LENGTH_LONG).show() }
+   }; webChromeClient=WebChromeClient(); setLayerType(android.view.View.LAYER_TYPE_HARDWARE,null); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
    val html=if(isAudio) {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:8px;background:#000;color:#fff}</style></head><body><audio controls preload=\"metadata\" style=\"width:100%\"><source src=\""+escaped+"\"></audio></body></html>"
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
-   if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   val shortHost=Uri.parse(embedUrl).host?.lowercase()
+    if(recording.platform.equals("tiktok",ignoreCase=true) && (shortHost=="vt.tiktok.com" || shortHost=="vm.tiktok.com")) loadUrl(embedUrl) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }},update={view->if(view.tag!=embedUrl){
    view.tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
@@ -165,7 +182,8 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
-   if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   val shortHost=Uri.parse(embedUrl).host?.lowercase()
+    if(recording.platform.equals("tiktok",ignoreCase=true) && (shortHost=="vt.tiktok.com" || shortHost=="vm.tiktok.com")) view.loadUrl(embedUrl) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
   }})
  }
 }
