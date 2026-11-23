@@ -666,7 +666,9 @@ class MainActivity:ComponentActivity(){
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
     Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
     Text("Add a YouTube, Spotify, TikTok, Facebook, Instagram or direct audio link (MP3, M4A, AAC, OGG or WAV). Supported links play here in the app.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
-    Button(onClick={recordingTitle="";recordingUrl="";recordingPlatform="YouTube";recordingError=null;showRecordingDialog=true},modifier=Modifier.fillMaxWidth()) { Text("+ Add a recording link") }
+    if (sharedRecordingsMessage == "No approved community recordings yet.") {
+     Button(onClick={recordingTitle="";recordingUrl="";recordingPlatform="YouTube";recordingError=null;showRecordingDialog=true},modifier=Modifier.fillMaxWidth()) { Text("+ Add a recording link") }
+    }
     if(hymnRecordings.value.isEmpty()) Text("No recordings added yet.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     hymnRecordings.value.forEachIndexed { index, recording ->
      Card(Modifier.fillMaxWidth().padding(vertical=3.dp)) {
