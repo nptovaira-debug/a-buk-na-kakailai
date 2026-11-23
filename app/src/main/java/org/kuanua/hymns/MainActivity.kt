@@ -903,6 +903,7 @@ class MainActivity:ComponentActivity(){
      TextButton(onClick={activeRecording=null;playerMinimized=false},colors=ButtonDefaults.textButtonColors(contentColor=MaterialTheme.colorScheme.onPrimary),contentPadding=PaddingValues(horizontal=5.dp,vertical=4.dp)) { Text("✕") }
     }
    }
+   }
   } else {
    Column(Modifier.align(androidx.compose.ui.Alignment.TopCenter).fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal=12.dp,vertical=8.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
