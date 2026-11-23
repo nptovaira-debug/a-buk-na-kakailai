@@ -498,7 +498,7 @@ class MainActivity:ComponentActivity(){
    enter=slideInVertically(animationSpec=tween(260)) { -it } + fadeIn(animationSpec=tween(220)),
    exit=slideOutVertically(animationSpec=tween(280)) { -it } + shrinkVertically(animationSpec=tween(280), shrinkTowards=androidx.compose.ui.Alignment.Top) + fadeOut(animationSpec=tween(220))
   ) {
-   Card(Modifier.fillMaxWidth(),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
+   Card(Modifier.width((androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp - 24).dp).offset(x=(-4).dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.primary),shape=MaterialTheme.shapes.large){
     Row(
      Modifier.fillMaxWidth().padding(horizontal=16.dp,vertical=9.dp),
      verticalAlignment=androidx.compose.ui.Alignment.CenterVertically
