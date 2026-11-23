@@ -92,7 +92,7 @@ private data class HymnRecording(val platform:String,val title:String,val url:St
 
 private fun recordingPlayerHtml(playerUrl:String):String {
  val escaped=playerUrl.replace("&","&amp;").replace("\\\"","&quot;").replace("<","&lt;").replace(">","&gt;")
- return "<!doctype html><html><head><meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\\\""+escaped+"\\\" allow=\\\"autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share\\\" allowfullscreen></iframe></body></html>"
+ return """<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src="$escaped" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share" allowfullscreen></iframe></body></html>"""
 }
 
 private fun recordingEmbedUrl(recording:HymnRecording):String? {
