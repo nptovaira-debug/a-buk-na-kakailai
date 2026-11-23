@@ -876,7 +876,7 @@ class MainActivity:ComponentActivity(){
          }
          if(localHasVideo || approvedVideoHymnNumbers.contains(h.number)) {
           Row(verticalAlignment=androidx.compose.ui.Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-           Icon(Icons.Default.PlayCircle,contentDescription="Video available",tint=MaterialTheme.colorScheme.primary,modifier=Modifier.size(15.dp))
+           Text("▶",fontSize=12.sp,color=MaterialTheme.colorScheme.primary)
            Text("Video available",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.primary)
           }
          }
