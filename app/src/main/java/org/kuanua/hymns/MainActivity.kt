@@ -16,6 +16,10 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.net.Uri
 import java.net.URLEncoder
+import java.net.HttpURLConnection
+import java.net.URL
+import android.os.Handler
+import android.os.Looper
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.graphics.Typeface
@@ -105,19 +109,90 @@ private fun recordingEmbedUrl(recording:HymnRecording):String? {
   "youtube" -> { val id=when { host=="youtu.be" -> path.trim('/').substringBefore('/'); host.endsWith("youtube.com") -> uri.getQueryParameter("v") ?: Regex("/(?:shorts|embed|live)/([^/?]+)").find(path)?.groupValues?.get(1); else -> null } ?: return null; if(!id.matches(Regex("[A-Za-z0-9_-]{6,}"))) return null; "https://www.youtube.com/embed/"+id+"?playsinline=1&controls=1&rel=0&enablejsapi=1" }
   "spotify" -> { if(host!="open.spotify.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("track","album","playlist","episode","show")) return null; "https://open.spotify.com/embed/"+p[0]+"/"+p[1]+"?utm_source=generator" }
   "tiktok" -> {
-   if(host=="vt.tiktok.com" || host=="vm.tiktok.com") return recording.url.trim()
    if(!(host=="tiktok.com" || host.endsWith(".tiktok.com"))) return null
    val id=Regex("/(?:video/|player/v1/)(\\d+)").find(path)?.groupValues?.get(1) ?: return null
    "https://www.tiktok.com/player/v1/"+id+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
   }
   "facebook" -> {
-   if(!(host=="facebook.com" || host=="fb.watch" || host.endsWith(".facebook.com"))) return null
-   if(path.startsWith("/share/v/") || host=="fb.watch") return recording.url.trim()
+   if(!(host=="facebook.com" || host.endsWith(".facebook.com"))) return null
+   val canonical=path.matches(Regex("/[^/]+/videos/\\d+/?")) ||
+    path.matches(Regex("/reel/\\d+/?")) ||
+    path.matches(Regex("/watch/?")) && uri.getQueryParameter("v")?.isNotBlank()==true ||
+    path.matches(Regex("/video.php")) && (uri.getQueryParameter("v")?.isNotBlank()==true || uri.getQueryParameter("story_fbid")?.isNotBlank()==true)
+   if(!canonical) return null
    "https://www.facebook.com/plugins/video.php?href="+URLEncoder.encode(recording.url.trim(),"UTF-8")+"&show_text=false&width=560"
   }
   "instagram" -> { if(host!="instagram.com") return null; val p=path.trim('/').split('/'); if(p.size<2 || p[0] !in setOf("p","reel","tv")) return null; "https://www.instagram.com/"+p[0]+"/"+p[1]+"/embed" }
   else -> null
  }
+}
+
+private data class ResolvedSocialRecording(val canonicalUrl:String,val videoId:String?=null)
+
+private fun followPublicRedirects(rawUrl:String):String {
+ var current=URL(rawUrl)
+ repeat(8) {
+  val connection=(current.openConnection() as HttpURLConnection).apply {
+   instanceFollowRedirects=false
+   connectTimeout=12000
+   readTimeout=12000
+   requestMethod="GET"
+   setRequestProperty("User-Agent","Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126.0.0.0 Mobile Safari/537.36")
+   setRequestProperty("Range","bytes=0-0")
+  }
+  try {
+   val code=connection.responseCode
+   val location=connection.getHeaderField("Location")
+   if(code in 300..399 && !location.isNullOrBlank()) {
+    current=URL(current,location)
+   } else return current.toString()
+  } finally { connection.disconnect() }
+ }
+ return current.toString()
+}
+
+private fun resolveSocialRecording(platform:String,rawUrl:String):ResolvedSocialRecording {
+ val start=URL(rawUrl)
+ require(start.protocol=="https" || start.protocol=="http") { "Enter a valid http or https link." }
+ val kind=platform.lowercase()
+ if(kind=="tiktok") {
+  require(start.host.lowercase().endsWith("tiktok.com")) { "Enter a TikTok video link." }
+  val finalUrl=followPublicRedirects(rawUrl)
+  val finalUri=Uri.parse(finalUrl)
+  require(finalUri.host?.lowercase()?.endsWith("tiktok.com")==true) { "TikTok did not redirect to a valid video page. Please paste the full TikTok video link." }
+  val id=Regex("/(?:@[^/]+/)?video/(\\d+)").find(finalUri.path.orEmpty())?.groupValues?.get(1)
+   ?: Regex("/player/v1/(\\d+)").find(finalUri.path.orEmpty())?.groupValues?.get(1)
+   ?: throw IllegalArgumentException("Could not identify the TikTok video. Please paste the full video URL, not a profile link.")
+  val canonical=if(finalUri.path.orEmpty().contains("/video/")) finalUrl.substringBefore("?") else "https://www.tiktok.com/video/"+id
+  val endpoint=URL("https://www.tiktok.com/oembed?url="+URLEncoder.encode(canonical,"UTF-8"))
+  val connection=(endpoint.openConnection() as HttpURLConnection).apply {
+   connectTimeout=12000;readTimeout=12000
+   setRequestProperty("User-Agent","Mozilla/5.0")
+  }
+  val metadata=try {
+   require(connection.responseCode in 200..299) { "TikTok could not verify this video. Check that it is public and try again." }
+   JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+  } finally { connection.disconnect() }
+  val confirmedId=metadata.optString("embed_product_id",id)
+  require(confirmedId.matches(Regex("\\d{10,25}"))) { "TikTok did not return a valid video ID. Please try the full video link." }
+  return ResolvedSocialRecording(canonical,confirmedId)
+ }
+ if(kind=="facebook") {
+  require(start.host.lowercase().contains("facebook.com") || start.host.lowercase()=="fb.watch") { "Enter a Facebook video link." }
+  val finalUrl=followPublicRedirects(rawUrl)
+  val uri=Uri.parse(finalUrl)
+  val host=uri.host?.lowercase()?.removePrefix("www.").orEmpty()
+  val path=uri.path.orEmpty()
+  require(host=="facebook.com" || host.endsWith(".facebook.com")) { "Facebook did not resolve this link to a video page. Please paste the full public video link." }
+  require(!path.contains("login") && !path.contains("checkpoint") && !path.contains("consent")) { "This Facebook video requires a login or permission and cannot be verified as a public embed." }
+  val valid=path.matches(Regex("/[^/]+/videos/\\d+/?")) ||
+   path.matches(Regex("/reel/\\d+/?")) ||
+   (path=="/watch" && !uri.getQueryParameter("v").isNullOrBlank()) ||
+   (path=="/video.php" && (!uri.getQueryParameter("v").isNullOrBlank() || !uri.getQueryParameter("story_fbid").isNullOrBlank()))
+  require(valid) { "Could not identify a public Facebook video URL. Please paste the video's full permalink." }
+  return ResolvedSocialRecording(finalUrl)
+ }
+ return ResolvedSocialRecording(rawUrl)
 }
 
 private fun isAudioRecording(recording:HymnRecording):Boolean {
@@ -425,6 +500,9 @@ class MainActivity:ComponentActivity(){
  var recordingUrl by remember { mutableStateOf("") }
  var recordingPlatform by remember { mutableStateOf("YouTube") }
  var recordingError by remember { mutableStateOf<String?>(null) }
+ var recordingResolving by remember { mutableStateOf(false) }
+ var recordingResolved by remember { mutableStateOf(false) }
+ var resolvedTikTokVideoId by remember { mutableStateOf<String?>(null) }
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var approvedAudioHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
  var approvedVideoHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
@@ -524,6 +602,7 @@ class MainActivity:ComponentActivity(){
     "title" to (doc.getString("title").orEmpty()),
     "url" to (doc.getString("url") ?: ""),
     "status" to "approved",
+    "videoId" to (doc.getString("videoId") ?: ""),
     "submittedBy" to (doc.getString("submittedBy") ?: ""),
     "approvedAt" to FieldValue.serverTimestamp()
    )
@@ -829,15 +908,34 @@ class MainActivity:ComponentActivity(){
         }
        }
        OutlinedTextField(value=recordingTitle,onValueChange={recordingTitle=it},label={Text("Singer / choir / description (optional)")},singleLine=true)
-       OutlinedTextField(value=recordingUrl,onValueChange={recordingUrl=it},label={Text("Recording URL")},singleLine=true)
+       OutlinedTextField(value=recordingUrl,onValueChange={recordingUrl={recordingUrl=it;recordingResolved=false;resolvedTikTokVideoId=null}},label={Text("Recording URL")},singleLine=true)
+       if(recordingResolved) Text("Verified link: ready to submit",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
        recordingError?.let { Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall) }
       }
      },
      confirmButton={
-      TextButton(onClick={
-       val parsed=runCatching{android.net.Uri.parse(recordingUrl.trim())}.getOrNull()
+      TextButton(enabled=!recordingResolving,onClick={
+       val parsed=runCatching{Uri.parse(recordingUrl.trim())}.getOrNull()
        if(parsed==null || parsed.scheme !in listOf("http","https") || parsed.host.isNullOrBlank()) {
         recordingError="Enter a valid link beginning with https:// or http://."
+       } else if(!recordingResolved && recordingPlatform.lowercase() in setOf("tiktok","facebook")) {
+        recordingResolving=true
+        recordingError=null
+        Thread {
+         val result=runCatching { resolveSocialRecording(recordingPlatform,recordingUrl.trim()) }
+         Handler(Looper.getMainLooper()).post {
+          recordingResolving=false
+          result.onSuccess { resolved ->
+           recordingUrl=resolved.canonicalUrl
+           resolvedTikTokVideoId=resolved.videoId
+           recordingResolved=true
+           recordingError=null
+          }.onFailure { error ->
+           recordingResolved=false
+           recordingError=error.message ?: "Could not verify this link. Please check it and try again."
+          }
+         }
+        }.start()
        } else if(hymnRecordings.value.any{it.url.equals(recordingUrl.trim(),ignoreCase=true)}) {
         recordingError="This recording link has already been added."
        } else {
@@ -857,6 +955,7 @@ class MainActivity:ComponentActivity(){
             "submittedBy" to uid,
             "createdAt" to FieldValue.serverTimestamp()
            )
+           if(!resolvedTikTokVideoId.isNullOrBlank()) submission["videoId"]=resolvedTikTokVideoId!!
            FirebaseFirestore.getInstance().collection("recordingSubmissions").add(submission)
             .addOnSuccessListener {
              val next=hymnRecordings.value+newRecording
@@ -870,7 +969,7 @@ class MainActivity:ComponentActivity(){
          }
          .addOnFailureListener { recordingError="Could not connect to the submission service. Please try again." }
        }
-      }) { Text("Save link") }
+      }) { Text(if(recordingResolving) "Checking link…" else if(recordingResolved) "Submit for review" else "Verify link") }
      },
      dismissButton={TextButton(onClick={showRecordingDialog=false}){Text("Cancel")}}
     )
