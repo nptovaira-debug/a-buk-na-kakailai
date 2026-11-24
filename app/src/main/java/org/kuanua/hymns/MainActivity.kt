@@ -96,7 +96,7 @@ private data class HymnRecording(val platform:String,val title:String,val url:St
 
 private fun recordingPlayerHtml(playerUrl:String):String {
  val escaped=playerUrl.replace("&","&amp;").replace("\\\"","&quot;").replace("<","&lt;").replace(">","&gt;")
- return """<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{display:block;border:0;width:100%;height:100%;}</style></head><body><iframe src="$escaped" title="Video player" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; web-share" allowfullscreen></iframe></body></html>"""
+ return """<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{display:block;border:0;width:100%;height:100%;}</style></head><body><iframe src="$escaped" title="Video player" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></body></html>"""
 }
 
 private fun recordingEmbedUrl(recording:HymnRecording):String? {
@@ -268,7 +268,6 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
   AndroidView(modifier=modifier.fillMaxWidth().height(if(isAudio) 92.dp else 220.dp),factory={ context -> WebView(context).apply {
    settings.javaScriptEnabled=true; settings.domStorageEnabled=true; settings.mediaPlaybackRequiresUserGesture=false
    settings.javaScriptCanOpenWindowsAutomatically=false; settings.setSupportMultipleWindows(false); settings.loadWithOverviewMode=true; settings.useWideViewPort=true; settings.allowFileAccess=false; settings.allowContentAccess=false; settings.mixedContentMode=WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-   settings.userAgentString="Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36"
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
    webViewClient=object:WebViewClient(){
@@ -320,7 +319,8 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
      }
 
     }
-    override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Video page failed to load (WebView error "+error.errorCode+"). Try Open link.",Toast.LENGTH_LONG).show() }
+    override fun onReceivedError(view:WebView,request:android.webkit.WebResourceRequest,error:android.webkit.WebResourceError){ if(request.isForMainFrame) Toast.makeText(context,"Video page failed to load (WebView error "+error.errorCode+"). Use Open link to watch externally.",Toast.LENGTH_LONG).show() }
+    override fun onReceivedHttpError(view:WebView,request:android.webkit.WebResourceRequest,response:android.webkit.WebResourceResponse){ if(request.isForMainFrame && response.statusCode>=400) Toast.makeText(context,"Video provider returned HTTP "+response.statusCode+". Use Open link to watch externally.",Toast.LENGTH_LONG).show() }
    }; webChromeClient=WebChromeClient(); setLayerType(android.view.View.LAYER_TYPE_HARDWARE,null); setBackgroundColor(android.graphics.Color.BLACK); tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
    val html=if(isAudio) {
@@ -328,9 +328,12 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
-   val shortHost=Uri.parse(embedUrl).host?.lowercase()
-    val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
-    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) loadUrl(recording.url.trim()) else if(recording.platform.equals("tiktok",true)) loadUrl(embedUrl) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
+   when {
+    isYouTube -> loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns"))
+    recording.platform.equals("tiktok",true) -> loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(embedUrl),"text/html","UTF-8",null)
+    recording.platform.equals("facebook",true) -> loadUrl(embedUrl)
+    else -> loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   }
   }},update={view->if(view.tag!=embedUrl){
    view.tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
@@ -339,9 +342,12 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    } else {
     "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><style>html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src=\""+escaped+"\" allow=\"autoplay; encrypted-media; picture-in-picture; fullscreen\" allowfullscreen></iframe></body></html>"
    }
-   val shortHost=Uri.parse(embedUrl).host?.lowercase()
-    val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
-    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) view.loadUrl(recording.url.trim()) else if(recording.platform.equals("tiktok",true)) view.loadUrl(embedUrl) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
+   when {
+    isYouTube -> view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns"))
+    recording.platform.equals("tiktok",true) -> view.loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(embedUrl),"text/html","UTF-8",null)
+    recording.platform.equals("facebook",true) -> view.loadUrl(embedUrl)
+    else -> view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },html,"text/html","UTF-8",null)
+   }
   }})
  }
 }
