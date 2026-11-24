@@ -134,21 +134,50 @@ private fun followPublicRedirects(rawUrl:String):String {
  repeat(8) {
   val connection=(current.openConnection() as HttpURLConnection).apply {
    instanceFollowRedirects=false
-   connectTimeout=12000
-   readTimeout=12000
+   connectTimeout=15000
+   readTimeout=15000
    requestMethod="GET"
    setRequestProperty("User-Agent","Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126.0.0.0 Mobile Safari/537.36")
-   setRequestProperty("Range","bytes=0-0")
   }
   try {
    val code=connection.responseCode
    val location=connection.getHeaderField("Location")
-   if(code in 300..399 && !location.isNullOrBlank()) {
-    current=URL(current,location)
-   } else return current.toString()
+   if(code in 300..399 && !location.isNullOrBlank()) current=URL(current,location)
+   else return current.toString()
   } finally { connection.disconnect() }
  }
  return current.toString()
+}
+
+private fun facebookCanonicalFromPage(pageUrl:String):String? {
+ val connection=(URL(pageUrl).openConnection() as HttpURLConnection).apply {
+  connectTimeout=15000;readTimeout=15000
+  setRequestProperty("User-Agent","Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126.0.0.0 Mobile Safari/537.36")
+  setRequestProperty("Accept","text/html,application/xhtml+xml")
+ }
+ val html=try {
+  if(connection.responseCode !in 200..299) return null
+  connection.inputStream.bufferedReader().use { it.readText().take(2_000_000) }
+ } catch (_:Exception) { return null } finally { connection.disconnect() }
+ val candidates=listOf(
+  Regex("""<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']""",RegexOption.IGNORE_CASE),
+  Regex("""<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']""",RegexOption.IGNORE_CASE),
+  Regex("""<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:url["']""",RegexOption.IGNORE_CASE)
+ )
+ for(pattern in candidates) {
+  val found=pattern.find(html)?.groupValues?.getOrNull(1) ?: continue
+  val decoded=found.replace("&amp;","&").replace("\\u0026","&").replace("\\/","/")
+  val absolute=runCatching { URL(URL(pageUrl),decoded).toString() }.getOrNull() ?: continue
+  val parsed=Uri.parse(absolute)
+  val host=parsed.host?.lowercase()?.removePrefix("www.").orEmpty()
+  val path=parsed.path.orEmpty()
+  val valid=host=="facebook.com" || host.endsWith(".facebook.com")
+  val video=path.matches(Regex("/[^/]+/videos/\\d+/?")) || path.matches(Regex("/reel/\\d+/?")) ||
+   (path.matches(Regex("/watch/?")) && !parsed.getQueryParameter("v").isNullOrBlank()) ||
+   (path=="/video.php" && (!parsed.getQueryParameter("v").isNullOrBlank() || !parsed.getQueryParameter("story_fbid").isNullOrBlank()))
+  if(valid && video) return absolute
+ }
+ return null
 }
 
 private fun resolveSocialRecording(platform:String,rawUrl:String):ResolvedSocialRecording {
@@ -179,18 +208,20 @@ private fun resolveSocialRecording(platform:String,rawUrl:String):ResolvedSocial
  }
  if(kind=="facebook") {
   require(start.host.lowercase().let { it=="facebook.com" || it.endsWith(".facebook.com") || it=="fb.watch" }) { "Enter a Facebook video link." }
-  val finalUrl=followPublicRedirects(rawUrl)
-  val uri=Uri.parse(finalUrl)
-  val host=uri.host?.lowercase()?.removePrefix("www.").orEmpty()
+  val redirected=followPublicRedirects(rawUrl)
+  val direct=Uri.parse(redirected)
+  val directHost=direct.host?.lowercase()?.removePrefix("www.").orEmpty()
+  val directPath=direct.path.orEmpty()
+  val directIsVideo=(directHost=="facebook.com" || directHost.endsWith(".facebook.com")) &&
+   (directPath.matches(Regex("/[^/]+/videos/\\d+/?")) || directPath.matches(Regex("/reel/\\d+/?")) ||
+    (directPath.matches(Regex("/watch/?")) && !direct.getQueryParameter("v").isNullOrBlank()) ||
+    (directPath=="/video.php" && (!direct.getQueryParameter("v").isNullOrBlank() || !direct.getQueryParameter("story_fbid").isNullOrBlank())))
+  val canonical=if(directIsVideo) redirected else facebookCanonicalFromPage(redirected)
+   ?: throw IllegalArgumentException("Facebook did not expose a public video permalink. Make sure the video is public and paste its full video link.")
+  val uri=Uri.parse(canonical)
   val path=uri.path.orEmpty()
-  require(host=="facebook.com" || host.endsWith(".facebook.com")) { "Facebook did not resolve this link to a video page. Please paste the full public video link." }
-  require(!path.contains("login") && !path.contains("checkpoint") && !path.contains("consent")) { "This Facebook video requires a login or permission and cannot be verified as a public embed." }
-  val valid=path.matches(Regex("/[^/]+/videos/\\d+/?")) ||
-   path.matches(Regex("/reel/\\d+/?")) ||
-   (path=="/watch" && !uri.getQueryParameter("v").isNullOrBlank()) ||
-   (path=="/video.php" && (!uri.getQueryParameter("v").isNullOrBlank() || !uri.getQueryParameter("story_fbid").isNullOrBlank()))
-  require(valid) { "Could not identify a public Facebook video URL. Please paste the video's full permalink." }
-  return ResolvedSocialRecording(finalUrl)
+  require(!path.contains("login") && !path.contains("checkpoint") && !path.contains("consent")) { "This Facebook video requires a login or permission and cannot be embedded publicly." }
+  return ResolvedSocialRecording(canonical)
  }
  return ResolvedSocialRecording(rawUrl)
 }
@@ -955,7 +986,6 @@ class MainActivity:ComponentActivity(){
             "submittedBy" to uid,
             "createdAt" to FieldValue.serverTimestamp()
            )
-           if(!resolvedTikTokVideoId.isNullOrBlank()) submission["videoId"]=resolvedTikTokVideoId!!
            FirebaseFirestore.getInstance().collection("recordingSubmissions").add(submission)
             .addOnSuccessListener {
              val next=hymnRecordings.value+newRecording
