@@ -156,10 +156,10 @@ private fun resolveSocialRecording(platform:String,rawUrl:String):ResolvedSocial
  require(start.protocol=="https" || start.protocol=="http") { "Enter a valid http or https link." }
  val kind=platform.lowercase()
  if(kind=="tiktok") {
-  require(start.host.lowercase().endsWith("tiktok.com")) { "Enter a TikTok video link." }
+  require(start.host.lowercase().let { it=="tiktok.com" || it.endsWith(".tiktok.com") }) { "Enter a TikTok video link." }
   val finalUrl=followPublicRedirects(rawUrl)
   val finalUri=Uri.parse(finalUrl)
-  require(finalUri.host?.lowercase()?.endsWith("tiktok.com")==true) { "TikTok did not redirect to a valid video page. Please paste the full TikTok video link." }
+  require(finalUri.host?.lowercase()?.let { it=="tiktok.com" || it.endsWith(".tiktok.com") }==true) { "TikTok did not redirect to a valid video page. Please paste the full TikTok video link." }
   val id=Regex("/(?:@[^/]+/)?video/(\\d+)").find(finalUri.path.orEmpty())?.groupValues?.get(1)
    ?: Regex("/player/v1/(\\d+)").find(finalUri.path.orEmpty())?.groupValues?.get(1)
    ?: throw IllegalArgumentException("Could not identify the TikTok video. Please paste the full video URL, not a profile link.")
@@ -178,7 +178,7 @@ private fun resolveSocialRecording(platform:String,rawUrl:String):ResolvedSocial
   return ResolvedSocialRecording(canonical,confirmedId)
  }
  if(kind=="facebook") {
-  require(start.host.lowercase().contains("facebook.com") || start.host.lowercase()=="fb.watch") { "Enter a Facebook video link." }
+  require(start.host.lowercase().let { it=="facebook.com" || it.endsWith(".facebook.com") || it=="fb.watch" }) { "Enter a Facebook video link." }
   val finalUrl=followPublicRedirects(rawUrl)
   val uri=Uri.parse(finalUrl)
   val host=uri.host?.lowercase()?.removePrefix("www.").orEmpty()
