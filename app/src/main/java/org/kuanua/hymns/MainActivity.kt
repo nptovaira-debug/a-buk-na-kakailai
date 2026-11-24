@@ -175,7 +175,7 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
       val id=Regex("/(?:video/|player/v1/)(\\d+)").find(raw)?.groupValues?.get(1)
       if(id!=null) {
        val playerUrl="https://www.tiktok.com/player/v1/"+id+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
-       view.loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(playerUrl),"text/html","UTF-8",null)
+       view.loadUrl(playerUrl)
       } else Toast.makeText(context,"TikTok redirected to an unsupported app link. Try Open link.",Toast.LENGTH_LONG).show()
       return true
      }
@@ -211,7 +211,7 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    }
    val shortHost=Uri.parse(embedUrl).host?.lowercase()
     val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
-    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) loadUrl(recording.url.trim()) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("tiktok",true)||recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
+    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) loadUrl(recording.url.trim()) else if(recording.platform.equals("tiktok",true)) loadUrl(embedUrl) else if(isYouTube) loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
   }},update={view->if(view.tag!=embedUrl){
    view.tag=embedUrl
    val escaped=embedUrl.replace("&","&amp;").replace("\"","&quot;").replace("<","&lt;").replace(">","&gt;")
@@ -222,7 +222,7 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    }
    val shortHost=Uri.parse(embedUrl).host?.lowercase()
     val sourceHost=Uri.parse(recording.url.trim()).host?.lowercase()?.removePrefix("www.")
-    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) view.loadUrl(recording.url.trim()) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("tiktok",true)||recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
+    if((recording.platform.equals("tiktok",true) && (sourceHost=="vt.tiktok.com" || sourceHost=="vm.tiktok.com")) || (recording.platform.equals("facebook",true) && (Uri.parse(recording.url.trim()).path.orEmpty().startsWith("/share/v/") || sourceHost=="fb.watch"))) view.loadUrl(recording.url.trim()) else if(recording.platform.equals("tiktok",true)) view.loadUrl(embedUrl) else if(isYouTube) view.loadUrl(embedUrl, mapOf("Referer" to "https://org.kuanua.hymns")) else view.loadDataWithBaseURL(Uri.parse(embedUrl).let { it.scheme+"://"+it.host+"/" },if(recording.platform.equals("facebook",true)) recordingPlayerHtml(embedUrl) else html,"text/html","UTF-8",null)
   }})
  }
 }
