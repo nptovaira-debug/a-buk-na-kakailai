@@ -903,12 +903,12 @@ class MainActivity:ComponentActivity(){
         OutlinedButton(onClick={platformMenu=true},modifier=Modifier.fillMaxWidth()) { Text("Platform: "+recordingPlatform) }
         DropdownMenu(expanded=platformMenu,onDismissRequest={platformMenu=false}) {
          listOf("YouTube","Spotify","TikTok","Facebook","Instagram","Other").forEach { platform ->
-          DropdownMenuItem(text={Text(platform)},onClick={recordingPlatform=platform;platformMenu=false})
+          DropdownMenuItem(text={Text(platform)},onClick={recordingPlatform=platform;recordingResolved=false;resolvedTikTokVideoId=null;recordingError=null;platformMenu=false})
          }
         }
        }
        OutlinedTextField(value=recordingTitle,onValueChange={recordingTitle=it},label={Text("Singer / choir / description (optional)")},singleLine=true)
-       OutlinedTextField(value=recordingUrl,onValueChange={recordingUrl={recordingUrl=it;recordingResolved=false;resolvedTikTokVideoId=null}},label={Text("Recording URL")},singleLine=true)
+       OutlinedTextField(value=recordingUrl,onValueChange={value -> recordingUrl=value;recordingResolved=false;resolvedTikTokVideoId=null;recordingError=null},label={Text("Recording URL")},singleLine=true)
        if(recordingResolved) Text("Verified link: ready to submit",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.primary)
        recordingError?.let { Text(it,color=MaterialTheme.colorScheme.error,style=MaterialTheme.typography.bodySmall) }
       }
@@ -969,7 +969,7 @@ class MainActivity:ComponentActivity(){
          }
          .addOnFailureListener { recordingError="Could not connect to the submission service. Please try again." }
        }
-      }) { Text(if(recordingResolving) "Checking link…" else if(recordingResolved) "Submit for review" else "Verify link") }
+      }) { Text(if(recordingResolving) "Checking link…" else if(recordingPlatform.lowercase() in setOf("tiktok","facebook") && !recordingResolved) "Verify link" else "Save link") }
      },
      dismissButton={TextButton(onClick={showRecordingDialog=false}){Text("Cancel")}}
     )
