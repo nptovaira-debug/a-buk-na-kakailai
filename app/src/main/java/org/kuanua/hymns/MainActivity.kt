@@ -161,6 +161,30 @@ private fun RecordingEmbed(recording:HymnRecording, modifier:Modifier=Modifier) 
    android.webkit.CookieManager.getInstance().setAcceptCookie(true)
    android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
    webViewClient=object:WebViewClient(){
+    override fun shouldOverrideUrlLoading(view:WebView,request:android.webkit.WebResourceRequest):Boolean {
+     val target=request.url
+     val scheme=target.scheme?.lowercase().orEmpty()
+     if(scheme=="http" || scheme=="https") return false
+     val raw=target.toString()
+     val fallback=runCatching { Uri.parse(raw).getQueryParameter("browser_fallback_url") }.getOrNull()
+     if(!fallback.isNullOrBlank() && (fallback.startsWith("https://") || fallback.startsWith("http://"))) {
+      view.loadUrl(fallback)
+      return true
+     }
+     if(recording.platform.equals("tiktok",ignoreCase=true)) {
+      val id=Regex("/(?:video/|player/v1/)(\\d+)").find(raw)?.groupValues?.get(1)
+      if(id!=null) {
+       val playerUrl="https://www.tiktok.com/player/v1/"+id+"?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1"
+       view.loadDataWithBaseURL("https://www.tiktok.com/",recordingPlayerHtml(playerUrl),"text/html","UTF-8",null)
+      } else Toast.makeText(context,"TikTok redirected to an unsupported app link. Try Open link.",Toast.LENGTH_LONG).show()
+      return true
+     }
+     if(recording.platform.equals("facebook",ignoreCase=true)) {
+      Toast.makeText(context,"Facebook redirected to an unsupported app link. Try Open link.",Toast.LENGTH_LONG).show()
+      return true
+     }
+     return true
+    }
     override fun onPageStarted(view:WebView,url:String,favicon:android.graphics.Bitmap?) {
      val sourceUri=runCatching { Uri.parse(recording.url.trim()) }.getOrNull()
      val sourceHost=sourceUri?.host?.lowercase()?.removePrefix("www.").orEmpty()
