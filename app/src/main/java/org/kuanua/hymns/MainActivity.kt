@@ -548,7 +548,10 @@ class MainActivity:ComponentActivity(){
  var sharedRecordings by remember { mutableStateOf<List<HymnRecording>>(emptyList()) }
  var approvedAudioHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
  var approvedVideoHymnNumbers by remember { mutableStateOf<Set<Int>>(emptySet()) }
- LaunchedEffect(Unit) {
+ var refreshKey by remember { mutableIntStateOf(0) }
+ var refreshingCollection by remember { mutableStateOf(false) }
+ LaunchedEffect(refreshKey) {
+  refreshingCollection = true
   FirebaseFirestore.getInstance().collection("recordings").whereEqualTo("status","approved").get()
    .addOnSuccessListener { snapshot ->
     approvedAudioHymnNumbers = snapshot.documents.mapNotNull { doc ->
@@ -563,7 +566,9 @@ class MainActivity:ComponentActivity(){
      val url = doc.getString("url") ?: return@mapNotNull null
      if (isVideoRecording(HymnRecording(platform,"",url))) number else null
     }.toSet()
+    refreshingCollection = false
    }
+   .addOnFailureListener { refreshingCollection = false }
  }
 
  var sharedRecordingsMessage by remember { mutableStateOf<String?>(null) }
@@ -868,7 +873,9 @@ class MainActivity:ComponentActivity(){
    }
    Row(Modifier.fillMaxWidth().padding(vertical=4.dp),horizontalArrangement=Arrangement.Center,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically){Text("Text size",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale-2).coerceAtLeast(14);prefs.edit().putInt("scale",scale).apply()}){Text("A−")};Text("${scale} sp",style=MaterialTheme.typography.labelMedium);TextButton(onClick={scale=(scale+2).coerceAtMost(30);prefs.edit().putInt("scale",scale).apply()}){Text("A+")}}
    val hymnRecordings=remember(h.number){mutableStateOf(loadHymnRecordings(prefs,h.number))}
-   LaunchedEffect(h.number) {
+   var refreshingHymn by remember(h.number) { mutableStateOf(false) }
+   LaunchedEffect(h.number, refreshKey) {
+    refreshingHymn = true
     sharedRecordings = emptyList()
     sharedRecordingsMessage = "Loading approved community recordings…"
     FirebaseFirestore.getInstance().collection("recordings")
@@ -882,11 +889,15 @@ class MainActivity:ComponentActivity(){
        HymnRecording(platform, doc.getString("title").orEmpty(), url)
       }
       sharedRecordingsMessage = if (sharedRecordings.isEmpty()) "No approved community recordings yet." else null
+      refreshingHymn = false
      }
-     .addOnFailureListener { sharedRecordingsMessage = "Community recordings are temporarily unavailable." }
+     .addOnFailureListener { sharedRecordingsMessage = "Community recordings are temporarily unavailable."; refreshingHymn = false }
    }
    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())){
-    Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+     Text("Listen to this hymn",style=MaterialTheme.typography.titleMedium,fontWeight=FontWeight.Bold)
+     TextButton(onClick={refreshKey++},enabled=!refreshingHymn) { Text(if(refreshingHymn) "Refreshing…" else "↻ Refresh") }
+    }
     if (hymnRecordings.value.isEmpty() && sharedRecordings.isEmpty()) {
      Text("Add a YouTube, Spotify, TikTok, Facebook, Instagram or direct audio link (MP3, M4A, AAC, OGG or WAV). Supported links play here in the app.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
      Text("No recordings added yet.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1082,7 +1093,12 @@ class MainActivity:ComponentActivity(){
     Text("Service order · ${playlist.size} hymns",style=MaterialTheme.typography.labelMedium)
     Button(onClick={presentationIndex=0;presenting=true},enabled=playlist.isNotEmpty(),modifier=Modifier.fillMaxWidth()){Text("▶ Present worship service")}
     Text("Add hymns as you prepare a worship service. Your list is saved on this phone.",style=MaterialTheme.typography.bodySmall)
-   }else Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
+   }else {
+    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
+     Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
+     TextButton(onClick={refreshKey++},enabled=!refreshingCollection) { Text(if(refreshingCollection) "Refreshing…" else "↻ Refresh") }
+    }
+   }
    LazyColumn(Modifier.weight(1f, fill=false),verticalArrangement=Arrangement.spacedBy(8.dp)){
     itemsIndexed(shown,key={_,h->"hymn_${h.number}"}){index,h->
      Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
