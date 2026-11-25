@@ -397,7 +397,6 @@ private fun createBackupJson(prefs: SharedPreferences): String {
   .put("createdAt", java.time.Instant.now().toString())
   .put("preferences", values).toString(2)
 }
-
 private fun restoreBackupJson(prefs: SharedPreferences, json: String) {
  val root = JSONObject(json)
  require(root.optString("appId") == BACKUP_APP_ID) { "This backup belongs to a different app." }
@@ -796,9 +795,8 @@ class MainActivity:ComponentActivity(){
      }
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
-     LaunchedEffect(current.number) {
-      presentationSharedRecordings = emptyList()
-      FirebaseFirestore.getInstance().collection("recordings")
+     LaunchedEffect(current.number, refreshKey) {
+      presentationSharedRecordings = emptyList()      FirebaseFirestore.getInstance().collection("recordings")
        .whereEqualTo("hymnNumber", current.number)
        .whereEqualTo("status", "approved")
        .get()
@@ -1197,8 +1195,7 @@ class MainActivity:ComponentActivity(){
     .background(MaterialTheme.colorScheme.background)
   ) {
    if(tab!="Service") AdMobBanner(adsAllowed, adRefreshKey)
-   HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.55f), thickness=0.5.dp)
-  }
+   HorizontalDivider(color=MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.55f), thickness=0.5.dp)  }
  }
  }
 if(showWelcome) WelcomeScreen(darkMode)
