@@ -796,7 +796,8 @@ class MainActivity:ComponentActivity(){
     }else{
      val current=presentationHymns[presentationIndex.coerceIn(0,presentationHymns.lastIndex)]
      LaunchedEffect(current.number, refreshKey) {
-      presentationSharedRecordings = emptyList()      FirebaseFirestore.getInstance().collection("recordings")
+      presentationSharedRecordings = emptyList()
+      FirebaseFirestore.getInstance().collection("recordings")
        .whereEqualTo("hymnNumber", current.number)
        .whereEqualTo("status", "approved")
        .get()
