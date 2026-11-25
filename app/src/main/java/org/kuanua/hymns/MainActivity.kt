@@ -1095,7 +1095,7 @@ class MainActivity:ComponentActivity(){
    }else {
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=androidx.compose.ui.Alignment.CenterVertically) {
      Text(shown.size.toString()+" hymns",style=MaterialTheme.typography.labelMedium)
-     TextButton(onClick={refreshKey++},enabled=!refreshingCollection) { Text(if(refreshingCollection) "Refreshing…" else "↻ Refresh") }
+     TextButton(onClick={refreshKey++;adRefreshKey++},enabled=!refreshingCollection) { Text(if(refreshingCollection) "Refreshing…" else "↻ Refresh") }
     }
    }
    LazyColumn(Modifier.weight(1f, fill=false),verticalArrangement=Arrangement.spacedBy(8.dp)){
